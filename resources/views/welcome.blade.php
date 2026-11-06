@@ -48,17 +48,21 @@
             </div>
 
             <!-- Estatísticas -->
-            <div class="mt-16 flex justify-center gap-8 text-blue-200 animate-in fade-in slide-in-from-up duration-700 delay-300">
+            <div class="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 text-blue-200 animate-in fade-in slide-in-from-up duration-700 delay-300">
                 <div class="text-center">
-                    <div class="text-2xl font-bold">146k+</div>
+                    <div class="text-2xl font-bold">{{ number_format($stats['open_projects'], 0, ',', '.') }}</div>
+                    <div class="text-sm opacity-80">Projetos abertos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold">{{ number_format($stats['completed_projects'], 0, ',', '.') }}</div>
                     <div class="text-sm opacity-80">Projetos concluídos</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold">4k+</div>
-                    <div class="text-sm opacity-80">Freelancers cadastrados</div>
+                    <div class="text-2xl font-bold">{{ number_format($stats['freelancers'], 0, ',', '.') }}</div>
+                    <div class="text-sm opacity-80">Freelancers ativos</div>
                 </div>
                 <div class="text-center">
-                    <div class="text-2xl font-bold">R$ 29M+</div>
+                    <div class="text-2xl font-bold">R$ {{ number_format($stats['paid_to_freelancers'], 0, ',', '.') }}</div>
                     <div class="text-sm opacity-80">Pago aos freelancers</div>
                 </div>
             </div>
@@ -89,6 +93,90 @@
                     </div>
                 @endforeach
             </div>
+        </div>
+    </section>
+
+    <!-- Categorias -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Explore por categoria</h2>
+                    <p class="text-gray-600 mt-1">Encontre o profissional certo para cada tipo de projeto.</p>
+                </div>
+                <a href="{{ route('categories.index') }}" class="hidden sm:inline text-sm font-semibold text-green-600 hover:text-green-700">Ver todas →</a>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach ($categories as $category)
+                    <a href="{{ route('categories.show', $category) }}"
+                       class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:border-green-300 hover:shadow-md transition-all">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-white" style="background-color: {{ $category->color ?: '#16a34a' }}">
+                            <i data-lucide="{{ $category->icon ?: 'briefcase' }}" class="w-5 h-5"></i>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 text-sm">{{ $category->name }}</h3>
+                        <p class="text-xs text-gray-500 mt-1">{{ $category->open_projects_count }} projeto(s) aberto(s)</p>
+                    </a>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    <!-- Projetos recentes -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-end justify-between mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-gray-900">Projetos recentes</h2>
+                    <p class="text-gray-600 mt-1">Oportunidades publicadas por clientes agora.</p>
+                </div>
+                <a href="{{ route('projects.index') }}" class="hidden sm:inline text-sm font-semibold text-green-600 hover:text-green-700">Ver todos →</a>
+            </div>
+
+            @if ($projects->isEmpty())
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-10 text-center">
+                    <p class="text-gray-500">Nenhum projeto aberto no momento. Seja o primeiro a publicar!</p>
+                </div>
+            @else
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @foreach ($projects as $project)
+                        <a href="{{ route('projects.show', $project) }}"
+                           class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:border-green-300 hover:shadow-md transition-all flex flex-col">
+                            <div class="flex items-center justify-between gap-2 mb-3">
+                                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-700">{{ $project->category?->name ?? 'Projeto' }}</span>
+                                @if ($project->is_featured)
+                                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">Destaque</span>
+                                @endif
+                            </div>
+                            <h3 class="font-bold text-gray-900 mb-2">{{ $project->title }}</h3>
+                            <p class="text-sm text-gray-600 line-clamp-3 flex-1">{{ $project->description }}</p>
+                            <div class="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+                                <span class="text-sm font-bold text-green-600">
+                                    R$ {{ number_format($project->budget_min ?? 0, 0, ',', '.') }} – {{ number_format($project->budget_max ?? 0, 0, ',', '.') }}
+                                </span>
+                                <span class="text-xs text-gray-500">{{ $project->proposals_count }} proposta(s)</span>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="py-16 bg-gradient-to-r from-blue-900 to-green-700">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-white mb-4">Pronto para começar?</h2>
+            <p class="text-blue-100 mb-8">Cadastre-se grátis e comece a contratar ou trabalhar com pagamento protegido.</p>
+            @guest
+                <a href="{{ route('register') }}" class="inline-flex px-8 py-4 bg-white text-blue-900 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg">
+                    Criar minha conta
+                </a>
+            @else
+                <a href="{{ route('dashboard') }}" class="inline-flex px-8 py-4 bg-white text-blue-900 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-all shadow-lg">
+                    Ir para o dashboard
+                </a>
+            @endguest
         </div>
     </section>
 

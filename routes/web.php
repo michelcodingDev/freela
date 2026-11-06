@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\DisputeController;
 use App\Http\Controllers\FreelancerController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
@@ -33,9 +34,18 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Route::get('/', HomeController::class)->name('home');
+
+// Vitrine pública
+Route::get('/categorias', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categorias/{category}', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/freelancers', [FreelancerController::class, 'index'])->name('freelancers.index');
+Route::get('/freelancers/{freelancer}', [FreelancerController::class, 'show'])->name('freelancers.show');
+Route::get('/ranking', RankingController::class)->name('ranking.index');
+
+// Projetos (listagem e detalhe são públicos; ações exigem login)
+Route::get('/projetos', [ProjectController::class, 'index'])->name('projects.index');
+Route::get('/projetos/{project}', [ProjectController::class, 'show'])->name('projects.show')->where('project', '[0-9]+');
 
 // Rotas de Autenticação
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
@@ -65,20 +75,9 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
-    // Categorias (públicas)
-    Route::get('/categorias', [CategoryController::class, 'index'])->name('categories.index');
-    Route::get('/categorias/{category}', [CategoryController::class, 'show'])->name('categories.show');
-
-    // Freelancers (vitrine pública)
-    Route::get('/freelancers', [FreelancerController::class, 'index'])->name('freelancers.index');
-    Route::get('/freelancers/{freelancer}', [FreelancerController::class, 'show'])->name('freelancers.show');
-    Route::get('/ranking', RankingController::class)->name('ranking.index');
-
     // Projetos
-    Route::get('/projetos', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/projetos/criar', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projetos', [ProjectController::class, 'store'])->name('projects.store');
-    Route::get('/projetos/{project}', [ProjectController::class, 'show'])->name('projects.show');
     Route::get('/projetos/{project}/editar', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::put('/projetos/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::post('/projetos/{project}/fechar', [ProjectController::class, 'close'])->name('projects.close');
