@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Project;
 use App\Services\NotificationService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DeliveryController extends Controller
@@ -37,7 +38,7 @@ class DeliveryController extends Controller
     /**
      * Freelancer entrega o projeto (aguardando liberação).
      */
-    public function deliver(Project $project)
+    public function deliver(Request $request, Project $project)
     {
         $this->authorizeHiredFreelancer($project);
 
@@ -45,7 +46,15 @@ class DeliveryController extends Controller
             return back()->with('error', 'Este projeto não está em andamento.');
         }
 
-        $project->update(['status' => 'aguardando_liberacao']);
+        $validated = $request->validate([
+            'delivery_note' => ['nullable', 'string', 'max:5000'],
+        ]);
+
+        $project->update([
+            'status' => 'aguardando_liberacao',
+            'delivery_note' => $validated['delivery_note'] ?? null,
+            'delivered_at' => now(),
+        ]);
 
         $this->notifications->notify(
             $project->client,

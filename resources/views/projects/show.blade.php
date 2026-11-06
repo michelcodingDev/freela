@@ -188,7 +188,14 @@ use Illuminate\Support\Facades\Storage; ?>
                                     @endif
                                 @endif
                                 @if ($project->status === 'em_andamento' && auth()->user()->isFreelancer() && auth()->id() === $project->acceptedProposal?->freelancer_id)
-                                    <form method="POST" action="{{ route('projects.deliver', $project) }}">@csrf<button class="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Entregar projeto</button></form>
+                                    <form method="POST" action="{{ route('projects.deliver', $project) }}" class="space-y-2">
+                                        @csrf
+                                        <label for="delivery_note" class="block text-xs font-medium text-gray-600">Nota da entrega (opcional)</label>
+                                        <textarea id="delivery_note" name="delivery_note" maxlength="5000" rows="3"
+                                                  class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                                                  placeholder="O que foi entregue, links ou instruções...">{{ old('delivery_note') }}</textarea>
+                                        <button class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium">Entregar projeto</button>
+                                    </form>
                                 @endif
                                 @if ($project->status === 'aguardando_liberacao' && auth()->user()->isCliente() && auth()->id() === $project->client_id)
                                     @php $pay = $project->payments()->where('status', 'custodia')->first() @endphp
@@ -223,6 +230,22 @@ use Illuminate\Support\Facades\Storage; ?>
                 </div>
             </div>
         </div>
+
+        @if ($project->delivered_at || $project->delivery_note)
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
+                <h2 class="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    <i data-lucide="package-check" class="w-5 h-5 text-green-600"></i> Entrega do freelancer
+                </h2>
+                @if ($project->delivered_at)
+                    <p class="text-xs text-gray-500">Entregue em {{ $project->delivered_at->format('d/m/Y H:i') }} ({{ $project->delivered_at->diffForHumans() }})</p>
+                @endif
+                @if ($project->delivery_note)
+                    <p class="text-sm text-gray-700 mt-3 leading-relaxed whitespace-pre-wrap">{{ $project->delivery_note }}</p>
+                @else
+                    <p class="text-sm text-gray-500 mt-3">Sem nota de entrega.</p>
+                @endif
+            </div>
+        @endif
 
         @php $publicReviews = $project->reviews->where('is_public', true); @endphp
         @if ($publicReviews->isNotEmpty())

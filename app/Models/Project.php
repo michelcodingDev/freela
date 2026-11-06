@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'experience_level', 'visibility', 'status', 'proposal_deadline',
     'budget_min', 'budget_max', 'is_featured', 'featured_fee',
     'attachment_path', 'admin_notes', 'approved_at', 'completed_at',
+    'delivery_note', 'delivered_at',
 ])]
 class Project extends Model
 {
@@ -24,6 +25,7 @@ class Project extends Model
         'proposal_deadline' => 'date',
         'approved_at' => 'datetime',
         'completed_at' => 'datetime',
+        'delivered_at' => 'datetime',
         'budget_min' => 'decimal:2',
         'budget_max' => 'decimal:2',
         'featured_fee' => 'decimal:2',
