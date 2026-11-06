@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Plan;
 use App\Models\PlanFeature;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,15 +11,12 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PlanFeatureFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'plan_id' => Plan::factory(),
+            'name' => fake()->sentence(3),
+            'description' => fake()->sentence(),
         ];
     }
 }

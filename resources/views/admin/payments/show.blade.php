@@ -6,7 +6,7 @@
                 <h1 class="text-2xl font-bold text-gray-900">Pagamento #{{ $payment->id }}</h1>
                 <p class="text-gray-600 text-sm">Detalhes da transação</p>
             </div>
-            <a href="{{ route('admin.payments.index') }}"
+            <a href="{{ route('admin.payments') }}"
                class="text-sm text-green-600 hover:text-green-700 font-medium flex items-center gap-1">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
                 Voltar aos pagamentos
@@ -128,7 +128,7 @@
                             <i data-lucide="briefcase" class="w-4 h-4"></i>
                             Ver Projeto
                         </a>
-                        <a href="{{ route('admin.payments.index') }}"
+                        <a href="{{ route('admin.payments') }}"
                            class="flex items-center gap-3 px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-xl text-gray-700 font-medium transition-all border border-gray-100">
                             <i data-lucide="list" class="w-4 h-4"></i>
                             Lista de Pagamentos

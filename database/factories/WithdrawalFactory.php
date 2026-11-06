@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use App\Models\Withdrawal;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -10,15 +11,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class WithdrawalFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'freelancer_id' => User::factory()->freelancer(),
+            'amount' => 500,
+            'fee' => 10,
+            'net_amount' => 490,
+            'pix_key' => 'pix@example.com',
+            'status' => 'solicitado',
         ];
     }
 }

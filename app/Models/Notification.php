@@ -15,6 +15,12 @@ class Notification extends Model
     /** @use HasFactory<NotificationFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'data' => 'array',
+        'is_read' => 'boolean',
+        'read_at' => 'datetime',
+    ];
+
     #[Relates]
     public function user()
     {

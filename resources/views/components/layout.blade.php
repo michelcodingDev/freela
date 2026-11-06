@@ -58,7 +58,7 @@
                 <div class="hidden md:flex items-center gap-8">
                     <a href="{{ route('home') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Início</a>
                     <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Projetos</a>
-                    <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
+                    <a href="{{ route('freelancers.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
 
                     @auth
                         <a href="{{ route('dashboard') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg">
@@ -72,6 +72,9 @@
 
                 @auth
                     <div class="flex items-center gap-3">
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-gray-500 hover:text-green-600 transition" title="Notificações">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                        </a>
                         <div class="text-right hidden sm:block">
                             <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-gray-500 capitalize">{{ auth()->user()->type }}</p>

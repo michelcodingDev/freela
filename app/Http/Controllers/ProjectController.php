@@ -2,23 +2,45 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProjectRequest;
 use App\Models\Category;
 use App\Models\Project;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProjectController extends Controller
 {
     /**
-     * Lista projetos disponíveis para propostas.
+     * Lista projetos disponíveis para propostas (RF10: palavra, categoria, habilidade, preço, nível).
      */
     public function index(Request $request)
     {
         $query = Project::where('status', 'aguardando_propostas')
-            ->with(['client', 'category'])
-            ->orderBy('created_at', 'desc');
+            ->with(['client', 'category', 'skills'])
+            ->withCount('proposals');
+
+        // Visibilidade: público + privados do cliente logado ou convites
+        $query->where(function ($q) {
+            $q->where('visibility', 'publico');
+            if (Auth::check()) {
+                $user = Auth::user();
+                $q->orWhere(function ($inner) use ($user) {
+                    $inner->where('visibility', 'privado')
+                        ->where(function ($w) use ($user) {
+                            $w->where('client_id', $user->id);
+                            if ($user->isAdmin()) {
+                                $w->orWhereNotNull('id');
+                            }
+                            if ($user->isFreelancer()) {
+                                $w->orWhereHas('invites', fn ($i) => $i->where('freelancer_id', $user->id));
+                            }
+                        });
+                });
+            }
+        });
 
         // Filtro por categoria
         if ($request->filled('category')) {
@@ -39,10 +61,33 @@ class ProjectController extends Controller
             $query->where('experience_level', $request->experience_level);
         }
 
-        $projects = $query->paginate(12)->withQueryString();
-        $categories = Category::active()->orderBy('sort_order')->get();
+        // Filtro por habilidade
+        if ($request->filled('skill')) {
+            $query->whereHas('skills', fn ($q) => $q->where('skills.id', $request->skill));
+        }
 
-        return view('projects.index', compact('projects', 'categories'));
+        // Filtro por preço (budget_min / budget_max sobrepostos)
+        if ($request->filled('budget_min')) {
+            $query->where('budget_max', '>=', (float) $request->budget_min);
+        }
+        if ($request->filled('budget_max')) {
+            $query->where('budget_min', '<=', (float) $request->budget_max);
+        }
+
+        // Ordenação: destacados primeiro, depois recentes
+        match ($request->order) {
+            'recentes' => $query->orderByDesc('is_featured')->orderByDesc('created_at'),
+            'menor_orcamento' => $query->orderBy('budget_min')->orderByDesc('created_at'),
+            'maior_orcamento' => $query->orderByDesc('budget_max')->orderByDesc('created_at'),
+            'mais_propostas' => $query->orderByDesc('proposals_count')->orderByDesc('created_at'),
+            default => $query->orderByDesc('is_featured')->orderByDesc('created_at'),
+        };
+
+        $projects = $query->paginate(12)->withQueryString();
+        $categories = Cache::remember('categories_active', 3600, fn () => Category::active()->orderBy('sort_order')->get());
+        $skills = Cache::remember('skills_all', 3600, fn () => Skill::with('category')->orderBy('name')->get());
+
+        return view('projects.index', compact('projects', 'categories', 'skills'));
     }
 
     /**
@@ -50,7 +95,11 @@ class ProjectController extends Controller
      */
     public function show(Project $project)
     {
-        $project->load(['client', 'category', 'proposals.freelancer.profile']);
+        if (! $project->isVisibleTo(Auth::user()) && ! Auth::user()?->isAdmin()) {
+            abort(403, 'Este projeto é privado.');
+        }
+
+        $project->load(['client', 'category', 'proposals.freelancer.profile', 'acceptedProposal.freelancer', 'payments', 'attachments', 'reviews', 'invites']);
 
         return view('projects.show', compact('project'));
     }
@@ -171,9 +220,89 @@ class ProjectController extends Controller
     {
         $this->authorizeProjectOwner($project);
 
+        if (! in_array($project->status, ['aguardando_aprovacao', 'aguardando_propostas', 'aguardando_pagamento'], true)) {
+            return back()->with('error', 'Este projeto não pode ser fechado neste estado.');
+        }
+
         $project->update(['status' => 'fechado']);
 
         return back()->with('success', 'Projeto fechado com sucesso.');
+    }
+
+    /**
+     * Reabre projeto fechado (volta para aguardando propostas).
+     */
+    public function reopen(Project $project)
+    {
+        $this->authorizeProjectOwner($project);
+
+        if ($project->status !== 'fechado') {
+            return back()->with('error', 'Apenas projetos fechados podem ser reabertos.');
+        }
+
+        if ($project->proposal_deadline->isPast()) {
+            return back()->with('error', 'O prazo de propostas já expirou. Edite o projeto para definir nova data.');
+        }
+
+        $project->update(['status' => 'aguardando_propostas']);
+
+        return back()->with('success', 'Projeto reaberto para novas propostas.');
+    }
+
+    /**
+     * Turbina projeto (destaque R$ 19,90, simulado).
+     */
+    public function boost(Project $project)
+    {
+        $this->authorizeProjectOwner($project);
+
+        if (! in_array($project->status, ['aguardando_aprovacao', 'aguardando_propostas'], true)) {
+            return back()->with('error', 'Este projeto não pode ser turbinado neste estado.');
+        }
+
+        if ($project->is_featured) {
+            return back()->with('info', 'Este projeto já está em destaque.');
+        }
+
+        $project->update(['is_featured' => true, 'featured_fee' => 19.90]);
+
+        return back()->with('success', 'Projeto turbinado! Ele aparecerá em destaque.');
+    }
+
+    /**
+     * Aprova projeto (admin) → aguardando propostas.
+     */
+    public function approve(Project $project)
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($project->status !== 'aguardando_aprovacao') {
+            return back()->with('error', 'Este projeto não está aguardando aprovação.');
+        }
+
+        $project->update(['status' => 'aguardando_propostas', 'approved_at' => now()]);
+
+        return back()->with('success', 'Projeto aprovado.');
+    }
+
+    /**
+     * Reprova projeto (admin).
+     */
+    public function reject(Project $project)
+    {
+        if (! Auth::user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($project->status !== 'aguardando_aprovacao') {
+            return back()->with('error', 'Este projeto não está aguardando aprovação.');
+        }
+
+        $project->update(['status' => 'reprovado']);
+
+        return back()->with('success', 'Projeto reprovado.');
     }
 
     /**

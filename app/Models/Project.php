@@ -20,6 +20,16 @@ class Project extends Model
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'proposal_deadline' => 'date',
+        'approved_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'budget_min' => 'decimal:2',
+        'budget_max' => 'decimal:2',
+        'featured_fee' => 'decimal:2',
+        'is_featured' => 'boolean',
+    ];
+
     #[Relates]
     public function client()
     {
@@ -54,6 +64,101 @@ class Project extends Model
     public function messages()
     {
         return $this->hasMany(Message::class);
+    }
+
+    #[Relates]
+    public function attachments()
+    {
+        return $this->hasMany(ProjectAttachment::class);
+    }
+
+    #[Relates]
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    #[Relates]
+    public function disputes()
+    {
+        return $this->hasMany(Dispute::class);
+    }
+
+    #[Relates]
+    public function acceptedProposal()
+    {
+        return $this->hasOne(Proposal::class)->where('status', 'aceita');
+    }
+
+    #[Relates]
+    public function invites()
+    {
+        return $this->hasMany(ProjectInvite::class);
+    }
+
+    /**
+     * Verifica se o usuário pode ver um projeto privado (dono, convidado ou admin).
+     */
+    public function isVisibleTo(?User $user): bool
+    {
+        if ($this->visibility !== 'privado') {
+            return true;
+        }
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->id === $this->client_id || $user->isAdmin()) {
+            return true;
+        }
+
+        return $this->invites()->where('freelancer_id', $user->id)->exists();
+    }
+
+    /**
+     * Verifica se o usuário foi convidado.
+     */
+    public function isInvited(int $userId): bool
+    {
+        return $this->invites()->where('freelancer_id', $userId)->exists();
+    }
+
+    /**
+     * Freelancer contratado (proposta aceita).
+     */
+    public function hiredFreelancer()
+    {
+        return $this->acceptedProposal?->freelancer;
+    }
+
+    /**
+     * Verifica se o usuário participa do projeto (cliente ou freelancer contratado).
+     */
+    public function isParticipant(int $userId): bool
+    {
+        if ($this->client_id === $userId) {
+            return true;
+        }
+
+        return $this->acceptedProposal?->freelancer_id === $userId;
+    }
+
+    /**
+     * Verifica se o projeto pode entrar em execução (pagamento em custódia).
+     */
+    public function canStartWork(): bool
+    {
+        return $this->status === 'aguardando_pagamento'
+            && $this->payments()->where('status', 'custodia')->exists();
+    }
+
+    /**
+     * Verifica se o freelancer pode entregar.
+     */
+    public function canBeDelivered(): bool
+    {
+        return $this->status === 'em_andamento';
     }
 
     /**

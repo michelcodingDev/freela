@@ -34,7 +34,36 @@ class PaymentService
         string $method,
         array $methodData = []
     ): array {
-        $amount = $project->budget_max ?? $project->budget_min ?? 0;
+        // Idempotência: reutiliza pagamento ativo para não duplicar ao recarregar a página.
+        $existing = $project->payments()
+            ->whereIn('status', ['pendente', 'custodia'])
+            ->latest('created_at')
+            ->first();
+
+        if ($existing) {
+            return [
+                'success' => true,
+                'payment' => $existing,
+                'payment_url' => $existing->gateway_response['payment_url'] ?? null,
+                'transaction_id' => $existing->payment_intent_id,
+                'data' => $existing->gateway_response ?? [],
+            ];
+        }
+
+        // Valor do projeto = oferta aceita (mais taxas) ou orçamento
+        $acceptedProposal = $project->acceptedProposal;
+        if ($acceptedProposal) {
+            $amount = (float) $acceptedProposal->offer;
+        } else {
+            $amount = $project->budget_max ?? $project->budget_min ?? 0;
+        }
+
+        if ($amount <= 0) {
+            return [
+                'success' => false,
+                'error' => 'Valor do projeto inválido para pagamento.',
+            ];
+        }
 
         // Calcular taxas
         $platformFee = $this->calculatePlatformFee($amount, $freelancer);
@@ -125,6 +154,15 @@ class PaymentService
             ];
         }
 
+        // Idempotência do webhook: se já está em custódia, não reaplica a transição.
+        if ($payment->status === 'custodia' && in_array($response->status, ['aprovado', 'concluido', 'pago'], true)) {
+            return ['success' => true, 'payment' => $payment];
+        }
+
+        if ($payment->status === 'estornado' && in_array($response->status, ['cancelado', 'estornado'], true)) {
+            return ['success' => true, 'payment' => $payment];
+        }
+
         // Atualizar status do pagamento
         $statusMap = [
             'aprovado' => 'custodia',
@@ -185,7 +223,7 @@ class PaymentService
         // Atualizar projeto para concluído
         $project = $payment->project;
         $project->update([
-            'status' => 'concluído',
+            'status' => 'concluido',
             'completed_at' => now(),
         ]);
 

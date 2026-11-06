@@ -89,9 +89,15 @@
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $project->created_at->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4">
-                                    <a href="{{ route('projects.show', $project) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                        Ver Detalhes →
-                                    </a>
+                                    <div class="flex flex-col gap-1">
+                                        <a href="{{ route('projects.show', $project) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver Detalhes →</a>
+                                        @if ($project->status === 'aguardando_aprovacao')
+                                            <div class="flex gap-2">
+                                                <form method="POST" action="{{ route('admin.projects.approve', $project) }}">@csrf<button class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Aprovar</button></form>
+                                                <form method="POST" action="{{ route('admin.projects.reject', $project) }}">@csrf<button class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Reprovar</button></form>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

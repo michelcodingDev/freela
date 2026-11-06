@@ -46,7 +46,7 @@ class PaymentController extends Controller
         }
 
         $freelancer = $proposal->freelancer;
-        $method = $request->query('method', 'pix');
+        $method = $request->query('method', $request->input('method', 'pix'));
 
         // Definir estratégia de pagamento
         $strategy = match ($method) {
@@ -117,6 +117,14 @@ class PaymentController extends Controller
     {
         $method = $request->query('method', 'pix');
         $payload = $request->all();
+
+        // Verificação opcional por segredo (se configurado)
+        $secret = config('services.pagseguro.webhook_secret');
+        if ($secret && $request->header('X-Webhook-Secret') !== $secret) {
+            Log::warning('Webhook rejeitado por segredo inválido');
+
+            return response()->json(['success' => false, 'message' => 'Assinatura inválida'], 401);
+        }
 
         Log::info('Webhook recebido', [
             'method' => $method,

@@ -24,10 +24,10 @@ use App\Models\Dispute;
                     <option value="3m" {{ $period === '3m' ? 'selected' : '' }}>Últimos 3 meses</option>
                     <option value="1m" {{ $period === '1m' ? 'selected' : '' }}>Último mês</option>
                 </select>
-                <a href="{{ route('admin.users.index') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm">
+                <a href="{{ route('admin.users') }}" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm">
                     Ver Todos Usuários
                 </a>
-                <a href="{{ route('admin.payments.index') }}" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all shadow-sm">
+                <a href="{{ route('admin.payments') }}" class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-all shadow-sm">
                     Ver Todos Pagamentos
                 </a>
             </div>
@@ -277,7 +277,7 @@ use App\Models\Dispute;
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                     <div class="p-6 border-b border-gray-100 flex justify-between items-center">
                         <h3 class="text-lg font-bold text-gray-900">Pagamentos Recentes</h3>
-                        <a href="{{ route('admin.payments.index') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">Ver todos →</a>
+                        <a href="{{ route('admin.payments') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">Ver todos →</a>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">

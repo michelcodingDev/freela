@@ -159,14 +159,58 @@ use Illuminate\Support\Facades\Storage; ?>
                     </div>
 
                     @if (auth()->check() && auth()->user()->isCliente() && auth()->id() === $project->client_id)
-                        <div class="mt-6">
+                        <div class="mt-6 space-y-2">
                             <a href="{{ route('projects.edit', $project) }}"
                                class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-all">
                                 <i data-lucide="edit-2" class="w-4 h-4"></i>
                                 Editar Projeto
                             </a>
+                            @if ($project->status === 'aguardando_propostas' && !$project->is_featured)
+                                <form method="POST" action="{{ route('projects.boost', $project) }}">@csrf<button class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium">Turbinar — R$ 19,90</button></form>
+                            @endif
+                            @if ($project->status === 'fechado')
+                                <form method="POST" action="{{ route('projects.reopen', $project) }}">@csrf<button class="w-full py-3 bg-gray-700 hover:bg-gray-800 text-white rounded-xl font-medium">Reabrir projeto</button></form>
+                            @endif
                         </div>
                     @endif
+
+                    @auth
+                        @if ($project->isParticipant(auth()->id()) || auth()->user()->isAdmin())
+                            <div class="mt-6 space-y-2">
+                                <a href="{{ route('projects.messages.index', $project) }}" class="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium flex items-center justify-center gap-2">
+                                    <i data-lucide="message-circle" class="w-4 h-4"></i> Chat do projeto
+                                </a>
+                                @if ($project->status === 'aguardando_pagamento')
+                                    @if (auth()->user()->isFreelancer())
+                                        <form method="POST" action="{{ route('projects.start', $project) }}">@csrf<button class="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Iniciar execução</button></form>
+                                    @elseif (auth()->user()->isCliente())
+                                        <a href="{{ route('payments.process', $project) }}" class="w-full py-3 bg-green-600 text-white rounded-xl font-medium flex items-center justify-center">Pagar em custódia</a>
+                                    @endif
+                                @endif
+                                @if ($project->status === 'em_andamento' && auth()->user()->isFreelancer() && auth()->id() === $project->acceptedProposal?->freelancer_id)
+                                    <form method="POST" action="{{ route('projects.deliver', $project) }}">@csrf<button class="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Entregar projeto</button></form>
+                                @endif
+                                @if ($project->status === 'aguardando_liberacao' && auth()->user()->isCliente() && auth()->id() === $project->client_id)
+                                    @php $pay = $project->payments()->where('status', 'custodia')->first() @endphp
+                                    @if ($pay)
+                                        <form method="POST" action="{{ route('payments.release', $pay) }}" onsubmit="return confirm('Liberar pagamento ao freelancer?')">@csrf<button class="w-full py-3 bg-green-600 text-white rounded-xl font-medium">Liberar pagamento</button></form>
+                                    @endif
+                                @endif
+                                @if ($project->status === 'concluido')
+                                    <a href="{{ route('projects.reviews.create', $project) }}" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium flex items-center justify-center gap-2">Avaliar ★</a>
+                                @endif
+                                @if (in_array($project->status, ['em_andamento', 'aguardando_liberacao'], true))
+                                    <a href="{{ route('projects.disputes.create', $project) }}" class="w-full py-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl font-medium flex items-center justify-center">Abrir disputa</a>
+                                @endif
+                            </div>
+                        @endif
+                        @if (auth()->user()->isAdmin() && $project->status === 'aguardando_aprovacao')
+                            <div class="mt-4 flex gap-2">
+                                <form method="POST" action="{{ route('projects.approve', $project) }}" class="flex-1">@csrf<button class="w-full py-2 bg-green-600 text-white rounded-xl text-sm font-medium">Aprovar</button></form>
+                                <form method="POST" action="{{ route('projects.reject', $project) }}" class="flex-1">@csrf<button class="w-full py-2 bg-red-100 text-red-700 rounded-xl text-sm font-medium">Reprovar</button></form>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
             </div>
         </div>

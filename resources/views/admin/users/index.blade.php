@@ -82,13 +82,19 @@
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $user->created_at->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4">
-                                    <div class="flex gap-2">
-                                        <a href="{{ route('profile.show', ['id' => $user->id]) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                            Ver Perfil
-                                        </a>
-                                        <button class="text-sm text-red-600 hover:text-red-700 font-medium">
-                                            Suspender
-                                        </button>
+                                    <div class="flex flex-wrap gap-2">
+                                        <a href="{{ route('freelancers.show', $user) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver</a>
+                                        @if (!$user->isAdmin())
+                                            <form method="POST" action="{{ route('admin.users.status', $user) }}" class="flex gap-1">
+                                                @csrf
+                                                <select name="status" class="text-xs border border-gray-300 rounded-lg px-1 py-1">
+                                                    @foreach (['ativo','inativo','suspenso','banido'] as $s)
+                                                        <option value="{{ $s }}" {{ $user->status === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <button class="text-xs text-red-600 font-medium hover:text-red-700">Atualizar</button>
+                                            </form>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

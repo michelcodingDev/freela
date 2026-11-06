@@ -30,11 +30,11 @@ class ProjectRequest extends FormRequest
             'visibility' => ['required', 'in:publico,privado'],
             'proposal_deadline' => ['required', 'date', 'after:today'],
             'budget_min' => ['nullable', 'numeric', 'min:0'],
-            'budget_max' => ['nullable', 'numeric', 'min:0'],
+            'budget_max' => ['nullable', 'numeric', 'min:0', 'gte:budget_min'],
             'skills' => ['nullable', 'array'],
             'skills.*' => ['exists:skills,id'],
-            'attachments' => ['nullable', 'array'],
-            'attachments.*' => ['file', 'max:10240'], // 10MB
+            'attachments' => ['nullable', 'array', 'max:5'],
+            'attachments.*' => ['file', 'mimes:pdf,jpg,jpeg,png,zip,doc,docx', 'max:10240'],
         ];
     }
 

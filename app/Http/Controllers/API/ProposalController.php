@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\Proposal;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ProposalController extends Controller
@@ -58,17 +59,34 @@ class ProposalController extends Controller
             ], 400);
         }
 
-        $offer = $request->validated('offer');
-        $platformFee = $offer * 0.15;
-        $finalOffer = $offer + $platformFee;
+        $limit = $this->proposalLimitFor($request->user());
+        $used = Proposal::where('freelancer_id', $request->user()->id)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        if ($used >= $limit) {
+            return response()->json([
+                'success' => false,
+                'message' => "Limite de {$limit} propostas do plano atingido neste mês.",
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'offer' => ['required', 'numeric', 'min:1'],
+            'estimated_days' => ['required', 'integer', 'min:1', 'max:365'],
+            'details' => ['required', 'string', 'min:50'],
+        ]);
+
+        $offer = (float) $validated['offer'];
+        $finalOffer = $offer;
 
         $proposal = Proposal::create([
             'project_id' => $project->id,
             'freelancer_id' => $request->user()->id,
             'offer' => $offer,
             'final_offer' => $finalOffer,
-            'estimated_days' => $request->validated('estimated_days'),
-            'details' => $request->validated('details'),
+            'estimated_days' => $validated['estimated_days'],
+            'details' => $validated['details'],
             'status' => 'pendente',
         ]);
 
@@ -81,6 +99,8 @@ class ProposalController extends Controller
 
     /**
      * Validação das propostas.
+     *
+     * @return array<string, mixed>
      */
     protected function validated(array $keys = []): array
     {
@@ -89,5 +109,12 @@ class ProposalController extends Controller
             'estimated_days' => ['required', 'integer', 'min:1', 'max:365'],
             'details' => ['required', 'string', 'min:50'],
         ]);
+    }
+
+    private function proposalLimitFor(User $user): int
+    {
+        $sub = $user->subscriptions()->where('status', 'ativo')->where('ends_at', '>', now())->first();
+
+        return (int) ($sub?->plan->proposals_per_month ?? 10);
     }
 }

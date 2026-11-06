@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,7 @@ class ProfileController extends Controller
      */
     public function show()
     {
-        $user = Auth::user()->load('profile');
+        $user = Auth::user()->load(['profile', 'skills']);
 
         return view('profile.show', compact('user'));
     }
@@ -23,9 +24,10 @@ class ProfileController extends Controller
      */
     public function edit()
     {
-        $user = Auth::user()->load('profile');
+        $user = Auth::user()->load(['profile', 'skills']);
+        $skills = Skill::with('category')->orderBy('name')->get();
 
-        return view('profile.edit', compact('user'));
+        return view('profile.edit', compact('user', 'skills'));
     }
 
     /**
@@ -51,7 +53,9 @@ class ProfileController extends Controller
             'bank_account' => ['nullable', 'string', 'max:50'],
             'bank_account_digit' => ['nullable', 'string', 'max:10'],
             'cpf_cnpj' => ['nullable', 'string', 'max:20'],
-            'profile_photo' => ['nullable', 'image', 'max:2048'],
+            'profile_photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['exists:skills,id'],
         ]);
 
         // Atualiza usuário
@@ -90,6 +94,10 @@ class ProfileController extends Controller
             ['user_id' => $user->id],
             $profileData
         );
+
+        if ($user->isFreelancer()) {
+            $user->skills()->sync($validated['skills'] ?? []);
+        }
 
         return redirect()->route('profile.show')
             ->with('success', 'Perfil atualizado com sucesso!');

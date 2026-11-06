@@ -24,11 +24,24 @@ class UserPlanSubscriptionController extends Controller
     }
 
     /**
-     * Assina um plano.
+     * Assina um plano (freelancer, simulado).
      */
     public function store(Request $request, Plan $plan)
     {
         $user = Auth::user();
+
+        if (! $user->isFreelancer() && ! $user->isAdmin()) {
+            abort(403, 'Apenas freelancers podem assinar planos.');
+        }
+
+        if (! $plan->is_active) {
+            return back()->with('error', 'Este plano não está ativo.');
+        }
+
+        $already = $user->subscriptions()->where('status', 'ativo')->where('ends_at', '>', now())->first();
+        if ($already && $already->plan_id === $plan->id) {
+            return back()->with('info', 'Você já tem este plano ativo.');
+        }
 
         // Cancelar assinatura ativa anterior
         $user->subscriptions()->where('status', 'ativo')->update(['status' => 'cancelado']);

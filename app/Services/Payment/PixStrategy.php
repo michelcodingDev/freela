@@ -21,7 +21,7 @@ class PixStrategy implements PaymentStrategyInterface
 
             return new PaymentResponse(
                 success: true,
-                paymentUrl: route('payments.process', ['id' => $transactionId, 'method' => 'pix']),
+                paymentUrl: route('payments.process', ['project' => $data['project_id'], 'method' => 'pix']),
                 transactionId: $transactionId,
                 data: [
                     'method' => 'pix',

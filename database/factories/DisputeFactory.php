@@ -3,6 +3,8 @@
 namespace Database\Factories;
 
 use App\Models\Dispute;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -10,15 +12,14 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class DisputeFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
-            //
+            'project_id' => Project::factory(),
+            'client_id' => User::factory()->cliente(),
+            'freelancer_id' => User::factory()->freelancer(),
+            'reason' => fake()->sentence(10),
+            'status' => 'aberta',
         ];
     }
 }

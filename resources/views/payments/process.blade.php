@@ -126,7 +126,7 @@
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
                 <h3 class="text-lg font-bold text-gray-900 mb-6">Pagamento com Cartão de Crédito</h3>
 
-                <form action="{{ route('payments.process', $project) }}" method="POST" class="space-y-6">
+                <form action="{{ route('payments.process.post', $project) }}" method="POST" class="space-y-6">
                     @csrf
                     <input type="hidden" name="method" value="cartao">
 

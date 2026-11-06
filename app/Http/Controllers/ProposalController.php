@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProposalRequest;
 use App\Models\Project;
 use App\Models\Proposal;
+use App\Models\User;
+use App\Services\NotificationService;
 
 class ProposalController extends Controller
 {
+    public function __construct(private NotificationService $notifications) {}
+
     /**
      * Exibe formulário para criar proposta (apenas freelancers).
      */
@@ -44,10 +49,25 @@ class ProposalController extends Controller
             abort(403, 'Apenas freelancers podem enviar propostas.');
         }
 
-        // Calcular oferta final com comissão da plataforma
+        if ($project->proposals()->where('freelancer_id', auth()->id())->exists()) {
+            return redirect()->route('projects.show', $project)
+                ->with('info', 'Você já enviou uma proposta para este projeto.');
+        }
+
+        // Limite mensal do plano (RF05: Free 10/mês)
+        $limit = $this->proposalLimitFor(auth()->user());
+        $used = Proposal::where('freelancer_id', auth()->id())
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        if ($used >= $limit) {
+            return redirect()->route('projects.show', $project)
+                ->with('error', "Você atingiu o limite de {$limit} propostas do seu plano neste mês. Faça upgrade para continuar.");
+        }
+
+        // Oferta final = valor pago pelo cliente (a comissão sai do líquido do freelancer via PaymentService)
         $offer = $request->offer;
-        $platformFee = $offer * 0.15; // 15% padrão (pode variar por plano)
-        $finalOffer = $offer + $platformFee;
+        $finalOffer = $offer;
 
         $proposal = Proposal::create([
             'project_id' => $project->id,
@@ -58,6 +78,14 @@ class ProposalController extends Controller
             'details' => $request->details,
             'status' => 'pendente',
         ]);
+
+        $this->notifications->notify(
+            $project->client,
+            'proposta_recebida',
+            'Nova proposta recebida',
+            'Você recebeu uma proposta de R$ '.number_format($offer, 2, ',', '.')." no projeto \"{$project->title}\".",
+            ['project_id' => $project->id]
+        );
 
         return redirect()->route('projects.show', $project)
             ->with('success', 'Proposta enviada com sucesso!');
@@ -107,6 +135,14 @@ class ProposalController extends Controller
         // Atualizar status do projeto
         $project->update(['status' => 'aguardando_pagamento']);
 
+        $this->notifications->notify(
+            $proposal->freelancer,
+            'proposta_aceita',
+            'Proposta aceita!',
+            "Sua proposta no projeto \"{$project->title}\" foi aceita. Aguarde o pagamento em custódia.",
+            ['project_id' => $project->id]
+        );
+
         return redirect()->route('projects.show', $project)
             ->with('success', 'Proposta aceita! Agora realize o pagamento para iniciar o projeto.');
     }
@@ -129,5 +165,12 @@ class ProposalController extends Controller
         $proposal->update(['status' => 'rejeitada']);
 
         return back()->with('success', 'Proposta rejeitada.');
+    }
+
+    private function proposalLimitFor(User $user): int
+    {
+        $sub = $user->subscriptions()->where('status', 'ativo')->where('ends_at', '>', now())->first();
+
+        return (int) ($sub?->plan->proposals_per_month ?? 10);
     }
 }

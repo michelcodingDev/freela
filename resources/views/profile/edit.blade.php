@@ -158,6 +158,20 @@
                     </div>
                 @endif
 
+                @if ($user->isFreelancer())
+                    <div class="border-t border-gray-100 pt-6">
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Habilidades</h3>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($skills ?? [] as $skill)
+                                <label class="inline-flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm cursor-pointer">
+                                    <input type="checkbox" name="skills[]" value="{{ $skill->id }}" {{ in_array($skill->id, old('skills', $user->skills->pluck('id')->all())) ? 'checked' : '' }}>
+                                    {{ $skill->name }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Foto de perfil -->
                 <div class="border-t border-gray-100 pt-6">
                     <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Foto de Perfil</h3>

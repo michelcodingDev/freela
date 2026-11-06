@@ -53,6 +53,37 @@
                     </select>
                 </div>
 
+                <div class="min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Habilidade</label>
+                    <select name="skill" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+                        <option value="">Todas as habilidades</option>
+                        @foreach ($skills ?? [] as $skill)
+                            <option value="{{ $skill->id }}" {{ request('skill') == $skill->id ? 'selected' : '' }}>{{ $skill->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="min-w-[140px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Orçamento mín. R$</label>
+                    <input type="number" name="budget_min" min="0" step="0.01" value="{{ request('budget_min') }}" placeholder="0" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                </div>
+
+                <div class="min-w-[140px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Orçamento máx. R$</label>
+                    <input type="number" name="budget_max" min="0" step="0.01" value="{{ request('budget_max') }}" placeholder="999999" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                </div>
+
+                <div class="min-w-[180px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Ordenar</label>
+                    <select name="order" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                        <option value="" {{ request('order') === null ? 'selected' : '' }}>Destaques primeiro</option>
+                        <option value="recentes" {{ request('order') === 'recentes' ? 'selected' : '' }}>Mais recentes</option>
+                        <option value="menor_orcamento" {{ request('order') === 'menor_orcamento' ? 'selected' : '' }}>Menor orçamento</option>
+                        <option value="maior_orcamento" {{ request('order') === 'maior_orcamento' ? 'selected' : '' }}>Maior orçamento</option>
+                        <option value="mais_propostas" {{ request('order') === 'mais_propostas' ? 'selected' : '' }}>Mais propostas</option>
+                    </select>
+                </div>
+
                 <button type="submit"
                         class="w-full md:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-lg">
                     Filtrar

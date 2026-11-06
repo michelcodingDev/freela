@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Dispute;
 use App\Models\Payment;
 use App\Models\Project;
+use App\Models\Proposal;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,17 +81,50 @@ class AdminDashboardController extends Controller
     /**
      * Lista todos os usuários (admin).
      */
-    public function users()
+    public function users(Request $request)
     {
         if (! auth()->user()->isAdmin()) {
             abort(403, 'Acesso restrito a administradores.');
         }
 
-        $users = User::with('profile')
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = User::with('profile')->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+        if ($request->filled('search')) {
+            $query->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')
+                ->orWhere('email', 'like', '%'.$request->search.'%'));
+        }
+
+        $users = $query->paginate(20)->withQueryString();
 
         return view('admin.users.index', compact('users'));
+    }
+
+    /**
+     * Admin altera status do usuário (suspender/banir/ativar).
+     */
+    public function updateUserStatus(Request $request, User $user)
+    {
+        if (! auth()->user()->isAdmin()) {
+            abort(403);
+        }
+
+        if ($user->isAdmin()) {
+            return back()->with('error', 'Não é possível alterar status de administrador.');
+        }
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:ativo,inativo,suspenso,banido'],
+        ]);
+
+        $user->update(['status' => $validated['status']]);
+
+        return back()->with('success', 'Status atualizado para '.$validated['status']);
     }
 
     /**
@@ -112,15 +146,22 @@ class AdminDashboardController extends Controller
     /**
      * Lista todos os projetos (admin).
      */
-    public function projects()
+    public function projects(Request $request)
     {
         if (! auth()->user()->isAdmin()) {
             abort(403, 'Acesso restrito a administradores.');
         }
 
-        $projects = Project::with(['client', 'category'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Project::with(['client', 'category'])->orderBy('created_at', 'desc');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('search')) {
+            $query->where('title', 'like', '%'.$request->search.'%');
+        }
+
+        $projects = $query->paginate(20)->withQueryString();
 
         return view('admin.projects.index', compact('projects'));
     }
@@ -287,24 +328,33 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * Obtém heatmap de propostas (últimos 7 dias).
+     * Obtém heatmap de propostas (últimos 7 dias, dados reais).
      */
     protected function getProposalsHeatmap(): array
     {
-        // Simulação de dados para o heatmap
-        // Em produção, isso viria da tabela proposals com created_at
         $days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab', 'Dom'];
-        $hours = ['08h', '11h', '14h', '17h', '20h'];
+        $hours = ['00h', '03h', '06h', '09h', '12h', '15h', '18h', '21h'];
+        $hourBuckets = [0, 3, 6, 9, 12, 15, 18, 21];
 
-        $data = [];
-        foreach ($days as $dayIndex => $day) {
-            $row = [];
-            foreach ($hours as $hourIndex => $hour) {
-                // Dados simulados - pico entre 14h e 17h de segunda a sexta
-                $base = ($dayIndex < 5 && $hourIndex >= 2 && $hourIndex <= 3) ? 80 : 20;
-                $row[] = rand($base - 10, $base + 15);
+        // DAYOFWEEK: 1=Dom..7=Sab → Seg=2..Dom=1
+        $rows = Proposal::where('created_at', '>=', now()->subDays(7))
+            ->selectRaw('DAYOFWEEK(created_at) as dow, HOUR(created_at) as hour_bucket_floor, COUNT(*) as total')
+            ->groupBy('dow', 'hour_bucket_floor')
+            ->get();
+
+        $data = array_fill(0, 7, array_fill(0, count($hours), 0));
+
+        foreach ($rows as $row) {
+            $dow = (int) $row->dow; // 1 Dom
+            $dayIndex = [1 => 6, 2 => 0, 3 => 1, 4 => 2, 5 => 3, 6 => 4, 7 => 5][$dow] ?? 0;
+            $hour = (int) $row->hour_bucket_floor;
+            $bucket = 0;
+            foreach ($hourBuckets as $i => $hb) {
+                if ($hour >= $hb) {
+                    $bucket = $i;
+                }
             }
-            $data[] = $row;
+            $data[$dayIndex][$bucket] += (int) $row->total;
         }
 
         return [
@@ -344,7 +394,7 @@ class AdminDashboardController extends Controller
                 'icon' => 'alert-circle',
                 'title' => "$disputes disputa(s) aberta(s) aguardando resolução",
                 'action' => 'Gerenciar disputas',
-                'url' => route('admin.disputes.index'),
+                'url' => route('admin.disputes'),
             ];
         }
 
@@ -356,7 +406,7 @@ class AdminDashboardController extends Controller
                 'icon' => 'user-x',
                 'title' => "$suspended usuário(s) suspenso(s)",
                 'action' => 'Revisar usuários',
-                'url' => route('admin.users.index'),
+                'url' => route('admin.users'),
             ];
         }
 

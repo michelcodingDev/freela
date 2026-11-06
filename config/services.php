@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'pagseguro' => [
+        'email' => env('PAGSEGURO_EMAIL'),
+        'token' => env('PAGSEGURO_TOKEN'),
+        'environment' => env('PAGSEGURO_ENVIRONMENT', 'sandbox'), // sandbox | production
+        'webhook_secret' => env('PAGSEGURO_WEBHOOK_SECRET'),
+    ],
+
 ];

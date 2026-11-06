@@ -20,6 +20,16 @@ class Payment extends Model
     /** @use HasFactory<PaymentFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'amount' => 'decimal:2',
+        'platform_fee' => 'decimal:2',
+        'gateway_fee' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+        'gateway_response' => 'array',
+        'paid_at' => 'datetime',
+        'released_at' => 'datetime',
+    ];
+
     #[Relates]
     public function project()
     {

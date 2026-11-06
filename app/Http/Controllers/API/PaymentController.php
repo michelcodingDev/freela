@@ -41,7 +41,7 @@ class PaymentController extends Controller
             ], 404);
         }
 
-        $method = $request->validated('method', 'pix');
+        $method = $request->input('method', 'pix');
 
         $strategy = match ($method) {
             'pix' => new PixStrategy,
@@ -70,7 +70,7 @@ class PaymentController extends Controller
             'success' => true,
             'payment' => $result['payment'],
             'payment_url' => $result['payment_url'],
-            'transaction_id' => $result['transactionId'],
+            'transaction_id' => $result['transaction_id'],
             'data' => $result['data'],
         ]);
     }

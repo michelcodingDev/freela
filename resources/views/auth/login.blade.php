@@ -48,7 +48,7 @@
                                    class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500">
                             <label for="remember-me" class="ml-2 text-sm text-gray-600">Lembrar de mim</label>
                         </div>
-                        <a href="#" class="text-sm text-green-600 hover:text-green-700 font-medium">Esqueceu a senha?</a>
+                        <a href="{{ route('password.request') }}" class="text-sm text-green-600 hover:text-green-700 font-medium">Esqueceu a senha?</a>
                     </div>
 
                     <button type="submit"
