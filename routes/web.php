@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\LogController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
@@ -102,5 +103,12 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
         Route::get('/pagamentos', [AdminDashboardController::class, 'payments'])->name('payments');
         Route::get('/projetos', [AdminDashboardController::class, 'projects'])->name('projects');
         Route::get('/disputas', [AdminDashboardController::class, 'disputes'])->name('disputes');
+    });
+
+    // Logs de Auditoria (apenas admin)
+    Route::middleware(['can:gerenciar planos'])->prefix('admin/logs')->name('admin.logs.')->group(function () {
+        Route::get('/', [LogController::class, 'index'])->name('index');
+        Route::get('/erros', [LogController::class, 'errors'])->name('errors');
+        Route::get('/exportar', [LogController::class, 'exportCsv'])->name('export');
     });
 });
