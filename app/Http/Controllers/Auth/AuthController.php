@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
 class AuthController extends Controller
@@ -31,13 +32,32 @@ class AuthController extends Controller
     {
         $credentials = $request->validated();
 
+        $throttleKey = 'login|'.mb_strtolower((string) $credentials['email']).'|'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Muitas tentativas de login. Tente novamente em '.$seconds.' segundos.',
+                    'retry_after' => $seconds,
+                ], 429);
+            }
+
+            return back()
+                ->withErrors(['email' => 'Muitas tentativas de login. Tente novamente em '.$seconds.' segundos.'])
+                ->onlyInput('email');
+        }
+
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
+            RateLimiter::hit($throttleKey, 60);
+
             return back()->withErrors([
                 'email' => 'As credenciais informadas não correspondem aos nossos registros.',
             ])->onlyInput('email');
         }
 
-        LoginRequest::clearAttempts($request->input('email'), $request->ip());
+        RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
         return redirect()->intended(route('dashboard'))

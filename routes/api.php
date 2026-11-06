@@ -24,12 +24,12 @@ use Illuminate\Support\Facades\Route;
 
 // Rotas públicas de autenticação
 Route::prefix('auth')->name('api.auth.')->group(function () {
-    Route::post('/register', [AuthController::class, 'register'])->name('register');
-    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:api-auth')->name('register');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:api-auth')->name('login');
 });
 
 // Rotas protegidas (requer token de API)
-Route::middleware('api.token')->name('api.')->group(function () {
+Route::middleware(['api.token', 'throttle:api'])->name('api.')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/me', [AuthController::class, 'me'])->name('me');
 

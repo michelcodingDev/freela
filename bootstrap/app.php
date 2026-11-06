@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.token' => ApiTokenMiddleware::class,
         ]);
 
+        // O limitador "api" (definido em AppServiceProvider) é aplicado ao grupo
+        // autenticado em routes/api.php, após a resolução do usuário pelo token.
         $middleware->append(AuditLoggerMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
