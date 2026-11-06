@@ -7,6 +7,8 @@ use App\Models\Project;
 use App\Models\Proposal;
 use App\Models\User;
 use App\Services\NotificationService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProposalController extends Controller
 {
@@ -93,20 +95,59 @@ class ProposalController extends Controller
 
     /**
      * Lista propostas de um projeto (apenas cliente).
+     *
+     * Suporta ordenação (?sort=) e filtro por status (?status=).
      */
-    public function index(Project $project)
+    public function index(Request $request, Project $project)
     {
         // Verificar se o usuário é o cliente do projeto
         if (auth()->id() !== $project->client_id) {
             abort(403, 'Você não tem permissão para ver as propostas deste projeto.');
         }
 
-        $proposals = $project->proposals()
-            ->with('freelancer.profile')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $sort = $request->get('sort', 'recent');
+        if (! in_array($sort, ['recent', 'offer_asc', 'offer_desc', 'days_asc', 'rating_desc'], true)) {
+            $sort = 'recent';
+        }
 
-        return view('proposals.index', compact('project', 'proposals'));
+        $filter = $request->get('status', 'all');
+        if (! in_array($filter, ['all', 'pendente', 'aceita', 'rejeitada', 'retirada'], true)) {
+            $filter = 'all';
+        }
+
+        $baseQuery = $project->proposals()
+            ->with([
+                'freelancer' => fn ($q) => $q->with(['profile', 'skills'])
+                    ->withAvg(['reviewsReceived as rating_avg' => fn ($qq) => $qq->where('is_public', true)], 'rating')
+                    ->withCount(['reviewsReceived' => fn ($qq) => $qq->where('is_public', true)]),
+            ]);
+
+        $pending = (clone $baseQuery)->where('status', 'pendente');
+
+        $summary = [
+            'total' => (clone $baseQuery)->count(),
+            'pending' => (clone $pending)->count(),
+            'cheapest' => (clone $pending)->min('offer'),
+            'fastest' => (clone $pending)->min('estimated_days'),
+        ];
+
+        $query = clone $baseQuery;
+
+        if ($filter !== 'all') {
+            $query->where('status', $filter);
+        }
+
+        match ($sort) {
+            'offer_asc' => $query->orderBy('offer'),
+            'offer_desc' => $query->orderByDesc('offer'),
+            'days_asc' => $query->orderBy('estimated_days'),
+            'rating_desc' => $query->orderByDesc(DB::raw('COALESCE((SELECT AVG(rating) FROM reviews WHERE reviews.to_user_id = proposals.freelancer_id AND reviews.is_public = 1 AND reviews.deleted_at IS NULL), 0)')),
+            default => $query->orderBy('created_at', 'desc'),
+        };
+
+        $proposals = $query->get();
+
+        return view('proposals.index', compact('project', 'proposals', 'summary', 'sort', 'filter'));
     }
 
     /**
