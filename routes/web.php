@@ -3,9 +3,11 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PlanController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProposalController;
+use App\Http\Controllers\UserPlanSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -68,5 +70,27 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::middleware(['can:ver todos pagamentos'])->group(function () {
         Route::get('/admin/pagamentos', [PaymentController::class, 'adminIndex'])->name('admin.payments.index');
         Route::get('/admin/pagamentos/{payment}', [PaymentController::class, 'adminShow'])->name('admin.payments.show');
+    });
+
+    // Planos (Admin)
+    Route::middleware(['can:gerenciar planos'])->prefix('admin/planos')->name('admin.plans.')->group(function () {
+        Route::get('/', [PlanController::class, 'index'])->name('index');
+        Route::get('/criar', [PlanController::class, 'create'])->name('create');
+        Route::post('/', [PlanController::class, 'store'])->name('store');
+        Route::get('/{plan}', [PlanController::class, 'show'])->name('show');
+        Route::get('/{plan}/editar', [PlanController::class, 'edit'])->name('edit');
+        Route::put('/{plan}', [PlanController::class, 'update'])->name('update');
+        Route::delete('/{plan}', [PlanController::class, 'destroy'])->name('destroy');
+        Route::post('/{plan}/toggle-status', [PlanController::class, 'toggleStatus'])->name('toggle');
+    });
+
+    // Assinaturas do Usuário
+    Route::get('/assinaturas', [UserPlanSubscriptionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/assinaturas/{plan}', [UserPlanSubscriptionController::class, 'store'])->name('subscriptions.store');
+    Route::post('/assinaturas/cancelar', [UserPlanSubscriptionController::class, 'cancel'])->name('subscriptions.cancel');
+
+    // Admin: Assinaturas
+    Route::middleware(['can:gerenciar planos'])->prefix('admin/assinaturas')->name('admin.subscriptions.')->group(function () {
+        Route::get('/', [UserPlanSubscriptionController::class, 'adminIndex'])->name('index');
     });
 });

@@ -58,7 +58,7 @@
                 <div class="hidden md:flex items-center gap-8">
                     <a href="{{ route('home') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Início</a>
                     <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Projetos</a>
-                    <a href="{{ route('freelancers.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
+                    <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
 
                     @auth
                         <a href="{{ route('dashboard') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg">
