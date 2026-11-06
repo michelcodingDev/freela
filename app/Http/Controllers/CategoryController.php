@@ -19,13 +19,29 @@ class CategoryController extends Controller
 
     /**
      * Exibe uma categoria específica com seus projetos.
+     *
+     * Apenas projetos públicos aguardando propostas, com filtro opcional por nível.
      */
-    public function show(Category $category)
+    public function show(Request $request, Category $category)
     {
-        $projects = $category->projects()
+        if (! $category->is_active) {
+            abort(404);
+        }
+
+        $query = $category->projects()
             ->where('status', 'aguardando_propostas')
-            ->orderBy('created_at', 'desc')
-            ->paginate(12);
+            ->where('visibility', 'publico')
+            ->with(['client', 'category'])
+            ->withCount('proposals')
+            ->orderByDesc('is_featured')
+            ->orderByDesc('created_at');
+
+        $level = $request->get('experience_level');
+        if (in_array($level, ['iniciante', 'intermediario', 'especialista'], true)) {
+            $query->where('experience_level', $level);
+        }
+
+        $projects = $query->paginate(12)->withQueryString();
 
         return view('categories.show', compact('category', 'projects'));
     }
@@ -99,10 +115,14 @@ class CategoryController extends Controller
     }
 
     /**
-     * Admin: exclui categoria.
+     * Admin: exclui categoria (bloqueia se houver projetos vinculados).
      */
     public function adminDestroy(Category $category)
     {
+        if ($category->projects()->exists()) {
+            return back()->with('error', 'Não é possível excluir uma categoria com projetos vinculados.');
+        }
+
         $category->delete();
 
         return redirect()->route('admin.categories.index')
