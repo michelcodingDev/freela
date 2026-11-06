@@ -131,7 +131,7 @@ class ProjectController extends Controller
             abort(403, 'Este projeto é privado.');
         }
 
-        $project->load(['client', 'category', 'proposals.freelancer.profile', 'acceptedProposal.freelancer', 'payments', 'attachments', 'reviews', 'invites']);
+        $project->load(['client', 'category', 'proposals.freelancer.profile', 'acceptedProposal.freelancer', 'payments', 'attachments', 'reviews.fromUser.profile', 'reviews.toUser', 'invites']);
 
         return view('projects.show', compact('project'));
     }

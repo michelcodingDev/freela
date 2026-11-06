@@ -29,7 +29,12 @@ class ReviewController extends Controller
                 ->with('info', 'Você já avaliou este projeto.');
         }
 
-        return view('reviews.create', compact('project'));
+        $toUser = User::find($this->otherParticipantId($project));
+
+        $deadline = $project->completed_at?->copy()->addDays(14);
+        $daysLeft = $deadline ? max(0, (int) now()->diffInDays($deadline, false)) : null;
+
+        return view('reviews.create', compact('project', 'toUser', 'deadline', 'daysLeft'));
     }
 
     /**
@@ -42,6 +47,7 @@ class ReviewController extends Controller
         $validated = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:2000'],
+            'is_public' => ['sometimes', 'boolean'],
         ], [
             'rating.required' => 'A avaliação é obrigatória.',
             'rating.min' => 'A nota mínima é 1.',
@@ -64,7 +70,8 @@ class ReviewController extends Controller
             'to_user_id' => $toUserId,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'] ?? null,
-            'is_public' => true,
+            // Sem o campo no envio (ex.: API antiga), mantém o padrão público.
+            'is_public' => $request->has('is_public') ? $request->boolean('is_public') : true,
         ]);
 
         $toUser = User::find($toUserId);
@@ -94,7 +101,13 @@ class ReviewController extends Controller
     private function otherParticipantId(Project $project): int
     {
         if (Auth::id() === $project->client_id) {
-            return $project->acceptedProposal->freelancer_id;
+            $freelancerId = $project->acceptedProposal?->freelancer_id;
+
+            if (! $freelancerId) {
+                abort(403, 'Este projeto não possui freelancer contratado para ser avaliado.');
+            }
+
+            return $freelancerId;
         }
 
         return $project->client_id;

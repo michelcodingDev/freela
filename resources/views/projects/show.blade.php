@@ -197,7 +197,16 @@ use Illuminate\Support\Facades\Storage; ?>
                                     @endif
                                 @endif
                                 @if ($project->status === 'concluido')
-                                    <a href="{{ route('projects.reviews.create', $project) }}" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium flex items-center justify-center gap-2">Avaliar ★</a>
+                                    @php $alreadyReviewed = $project->reviews->contains('from_user_id', auth()->id()); @endphp
+                                    @if ($alreadyReviewed)
+                                        <span class="w-full py-3 bg-gray-100 text-gray-500 rounded-xl font-medium flex items-center justify-center gap-2">
+                                            <i data-lucide="check-circle" class="w-4 h-4"></i> Você já avaliou
+                                        </span>
+                                    @else
+                                        <a href="{{ route('projects.reviews.create', $project) }}" class="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium flex items-center justify-center gap-2">
+                                            <i data-lucide="star" class="w-4 h-4"></i> Avaliar projeto
+                                        </a>
+                                    @endif
                                 @endif
                                 @if (in_array($project->status, ['em_andamento', 'aguardando_liberacao'], true))
                                     <a href="{{ route('projects.disputes.create', $project) }}" class="w-full py-3 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl font-medium flex items-center justify-center">Abrir disputa</a>
@@ -214,6 +223,37 @@ use Illuminate\Support\Facades\Storage; ?>
                 </div>
             </div>
         </div>
+
+        @php $publicReviews = $project->reviews->where('is_public', true); @endphp
+        @if ($publicReviews->isNotEmpty())
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+                <h2 class="text-lg font-bold text-gray-900 mb-2">Avaliações do projeto</h2>
+                <p class="text-sm text-gray-500 mb-6">{{ $publicReviews->count() }} {{ $publicReviews->count() === 1 ? 'avaliação pública' : 'avaliações públicas' }}</p>
+
+                <div class="space-y-4">
+                    @foreach ($publicReviews as $review)
+                        <article class="border border-gray-100 rounded-xl p-5 {{ $loop->last ? '' : '' }}">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div class="flex items-center gap-3">
+                                    <img src="{{ $review->fromUser?->profile?->profile_photo ?? 'https://ui-avatars.com/api/?name='.urlencode($review->fromUser?->name ?? '?').'&background=random&size=64' }}"
+                                         class="w-10 h-10 rounded-full object-cover" alt="">
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-900">{{ $review->fromUser?->name ?? 'Usuário' }}</p>
+                                        <p class="text-xs text-gray-400">{{ $review->created_at->format('d/m/Y') }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-amber-500 text-sm" aria-label="{{ $review->rating }} de 5 estrelas">
+                                    {{ str_repeat('★', (int) $review->rating) }}<span class="text-gray-200">{{ str_repeat('★', max(0, 5 - (int) $review->rating)) }}</span>
+                                </p>
+                            </div>
+                            @if ($review->comment)
+                                <p class="text-sm text-gray-700 mt-3 leading-relaxed">{{ $review->comment }}</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        @endif
     </div>
 
 </x-layout>

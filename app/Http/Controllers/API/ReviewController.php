@@ -22,6 +22,7 @@ class ReviewController extends Controller
         $validated = $request->validate([
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['nullable', 'string', 'max:2000'],
+            'is_public' => ['sometimes', 'boolean'],
         ]);
 
         if ($project->completed_at && $project->completed_at->lt(now()->subDays(14))) {
@@ -33,8 +34,12 @@ class ReviewController extends Controller
         }
 
         $toId = $request->user()->id === $project->client_id
-            ? $project->acceptedProposal->freelancer_id
+            ? $project->acceptedProposal?->freelancer_id
             : $project->client_id;
+
+        if (! $toId) {
+            return response()->json(['success' => false, 'message' => 'Este projeto não possui freelancer contratado para ser avaliado.'], 403);
+        }
 
         $review = Review::create([
             'project_id' => $project->id,
@@ -42,7 +47,7 @@ class ReviewController extends Controller
             'to_user_id' => $toId,
             'rating' => $validated['rating'],
             'comment' => $validated['comment'] ?? null,
-            'is_public' => true,
+            'is_public' => $request->has('is_public') ? $request->boolean('is_public') : true,
         ]);
 
         $this->notifications->notify(
