@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\WalletService;
+use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 
@@ -26,13 +27,14 @@ class WalletController extends Controller
         }
 
         $summary = $this->wallet->summary($user);
-        $transactions = $this->wallet->transactions($user);
+        $filters = $this->filters();
+        $allTransactions = $this->wallet->transactions($user, $filters);
         $page = LengthAwarePaginator::resolveCurrentPage();
         $perPage = 20;
 
         $paginated = new LengthAwarePaginator(
-            $transactions->forPage($page, $perPage)->values(),
-            $transactions->count(),
+            $allTransactions->forPage($page, $perPage)->values(),
+            $allTransactions->count(),
             $perPage,
             $page,
             ['path' => LengthAwarePaginator::resolveCurrentPath(), 'query' => request()->query()]
@@ -42,14 +44,33 @@ class WalletController extends Controller
             'user' => $user,
             'summary' => $summary,
             'transactions' => $paginated,
-            'totalTransactions' => $transactions->count(),
+            'totalTransactions' => $allTransactions->count(),
+            'filters' => $filters,
         ]);
+    }
+
+    /**
+     * Normaliza os filtros do extrato a partir da query string.
+     *
+     * @return array{direction: string, status: string, period: string}
+     */
+    protected function filters(): array
+    {
+        $direction = request('direction', 'all');
+        $status = request('status', 'all');
+        $period = request('period', 'all');
+
+        return [
+            'direction' => in_array($direction, ['credito', 'debito', 'all'], true) ? $direction : 'all',
+            'status' => $status === '' ? 'all' : $status,
+            'period' => in_array($period, ['all', '30d', '90d', '12m'], true) ? $period : 'all',
+        ];
     }
 
     /**
      * Exporta o extrato do usuário em CSV.
      */
-    public function export()
+    public function export(Request $request)
     {
         $user = Auth::user();
 
@@ -57,7 +78,7 @@ class WalletController extends Controller
             abort(403, 'Use a exportação de pagamentos do admin.');
         }
 
-        $transactions = $this->wallet->transactions($user);
+        $transactions = $this->wallet->transactions($user, $this->filters());
 
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',

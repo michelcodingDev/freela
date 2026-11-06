@@ -23,9 +23,12 @@ class WalletService
     /**
      * Extrato unificado (pagamentos e saques) em ordem decrescente.
      *
+     * Filtros suportados: direction (credito|debito), status, period (all|30d|90d|12m).
+     *
+     * @param  array<string, mixed>  $filters
      * @return Collection<int, array{date: Carbon, direction: string, description: string, amount: float, status: string, status_label: string, url: ?string}>
      */
-    public function transactions(User $user): Collection
+    public function transactions(User $user, array $filters = []): Collection
     {
         $transactions = collect();
 
@@ -59,7 +62,32 @@ class WalletService
             }
         }
 
-        return $transactions->sortByDesc('date')->values();
+        return $transactions->sortByDesc('date')->values()
+            ->filter(function (array $transaction) use ($filters) {
+                if (($filters['direction'] ?? 'all') !== 'all' && $transaction['direction'] !== $filters['direction']) {
+                    return false;
+                }
+
+                if (($filters['status'] ?? 'all') !== 'all' && $transaction['status'] !== $filters['status']) {
+                    return false;
+                }
+
+                $period = $filters['period'] ?? 'all';
+                if (in_array($period, ['30d', '90d', '12m'], true)) {
+                    $days = match ($period) {
+                        '30d' => 30,
+                        '90d' => 90,
+                        default => 365,
+                    };
+
+                    if ($transaction['date']->lt(now()->subDays($days))) {
+                        return false;
+                    }
+                }
+
+                return true;
+            })
+            ->values();
     }
 
     /**

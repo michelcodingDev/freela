@@ -12,6 +12,8 @@ class WalletController extends Controller
 
     /**
      * Resumo e extrato financeiro do usuário autenticado.
+     *
+     * Aceita os mesmos filtros da web: direction, status e period.
      */
     public function index(Request $request)
     {
@@ -24,12 +26,22 @@ class WalletController extends Controller
             ], 403);
         }
 
+        $direction = $request->get('direction', 'all');
+        $period = $request->get('period', 'all');
+
+        $filters = [
+            'direction' => in_array($direction, ['credito', 'debito', 'all'], true) ? $direction : 'all',
+            'status' => $request->filled('status') ? $request->get('status') : 'all',
+            'period' => in_array($period, ['all', '30d', '90d', '12m'], true) ? $period : 'all',
+        ];
+
         return response()->json([
             'success' => true,
             'data' => [
                 'role' => $user->type,
                 'summary' => $this->wallet->summary($user),
-                'transactions' => $this->wallet->transactions($user)->take(50)->values(),
+                'transactions' => $this->wallet->transactions($user, $filters)->take(50)->values(),
+                'filters' => $filters,
             ],
         ]);
     }

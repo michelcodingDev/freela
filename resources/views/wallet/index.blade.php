@@ -70,6 +70,52 @@
         </div>
     @endif
 
+    @php
+        $filters = $filters ?? ['direction' => 'all', 'status' => 'all', 'period' => 'all'];
+        $isFiltered = ($filters['direction'] ?? 'all') !== 'all' || ($filters['status'] ?? 'all') !== 'all' || ($filters['period'] ?? 'all') !== 'all';
+        $statusOptions = $isFreelancer
+            ? ['pendente' => 'Pendente', 'custodia' => 'Em custódia', 'liberado' => 'Liberado', 'estornado' => 'Estornado', 'solicitado' => 'Solicitado', 'processando' => 'Processando', 'pago' => 'Pago', 'cancelado' => 'Cancelado']
+            : ['pendente' => 'Pendente', 'custodia' => 'Em custódia', 'liberado' => 'Liberado', 'estornado' => 'Estornado'];
+    @endphp
+
+    <form method="GET" action="{{ route('wallet.index') }}" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
+        <div class="flex flex-wrap items-end gap-3">
+            <div class="min-w-[160px]">
+                <label for="filter-direction" class="block text-sm font-medium text-gray-700 mb-1.5">Tipo</label>
+                <select id="filter-direction" name="direction" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="all" {{ $filters['direction'] === 'all' ? 'selected' : '' }}>Todos</option>
+                    <option value="credito" {{ $filters['direction'] === 'credito' ? 'selected' : '' }}>Crédito</option>
+                    <option value="debito" {{ $filters['direction'] === 'debito' ? 'selected' : '' }}>Débito</option>
+                </select>
+            </div>
+            <div class="min-w-[160px]">
+                <label for="filter-status" class="block text-sm font-medium text-gray-700 mb-1.5">Status</label>
+                <select id="filter-status" name="status" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="all" {{ $filters['status'] === 'all' ? 'selected' : '' }}>Todos</option>
+                    @foreach ($statusOptions as $value => $label)
+                        <option value="{{ $value }}" {{ $filters['status'] === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="min-w-[160px]">
+                <label for="filter-period" class="block text-sm font-medium text-gray-700 mb-1.5">Período</label>
+                <select id="filter-period" name="period" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none">
+                    <option value="all" {{ $filters['period'] === 'all' ? 'selected' : '' }}>Todo o período</option>
+                    <option value="30d" {{ $filters['period'] === '30d' ? 'selected' : '' }}>Últimos 30 dias</option>
+                    <option value="90d" {{ $filters['period'] === '90d' ? 'selected' : '' }}>Últimos 90 dias</option>
+                    <option value="12m" {{ $filters['period'] === '12m' ? 'selected' : '' }}>Últimos 12 meses</option>
+                </select>
+            </div>
+            <button class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">Filtrar</button>
+            @if ($isFiltered)
+                <a href="{{ route('wallet.index') }}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Limpar</a>
+                <a href="{{ route('wallet.export', request()->query()) }}" class="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar filtrado
+                </a>
+            @endif
+        </div>
+    </form>
+
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <h2 class="font-bold text-gray-900">Extrato</h2>
