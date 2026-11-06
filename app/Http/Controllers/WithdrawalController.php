@@ -24,9 +24,34 @@ class WithdrawalController extends Controller
         }
 
         $available = $user->availableBalance();
-        $withdrawals = $user->withdrawals()->orderByDesc('created_at')->paginate(20);
+        $summary = [
+            'pending' => (float) $user->withdrawals()->whereIn('status', ['solicitado', 'processando'])->sum('net_amount'),
+            'paid' => (float) $user->withdrawals()->where('status', 'pago')->sum('net_amount'),
+            'days' => $this->withdrawalDays($user),
+        ];
+        $withdrawals = $user->withdrawals()->orderByDesc('created_at')->paginate(20)->withQueryString();
 
-        return view('withdrawals.index', compact('available', 'withdrawals'));
+        return view('withdrawals.index', compact('available', 'withdrawals', 'summary'));
+    }
+
+    /**
+     * Freelancer cancela o próprio saque ainda pendente.
+     */
+    public function cancel(Withdrawal $withdrawal)
+    {
+        $user = Auth::user();
+
+        if ($withdrawal->freelancer_id !== $user->id) {
+            abort(403);
+        }
+
+        if (! in_array($withdrawal->status, ['solicitado', 'processando'], true)) {
+            return back()->with('error', 'Apenas saques pendentes podem ser cancelados.');
+        }
+
+        $withdrawal->update(['status' => 'cancelado']);
+
+        return back()->with('success', 'Saque cancelado. O valor voltou para seu saldo disponível.');
     }
 
     /**
@@ -40,16 +65,17 @@ class WithdrawalController extends Controller
             abort(403, 'Apenas freelancers podem solicitar saque.');
         }
 
+        $available = $user->availableBalance();
+
         $validated = $request->validate([
-            'amount' => ['required', 'numeric', 'min:10'],
+            'amount' => ['required', 'numeric', 'min:10', 'max:'.$available],
             'pix_key' => ['required', 'string', 'max:100'],
         ], [
             'amount.required' => 'Informe o valor do saque.',
             'amount.min' => 'O valor mínimo é R$ 10,00.',
+            'amount.max' => 'O valor excede seu saldo disponível. Disponível: R$ '.number_format($available, 2, ',', '.').'.',
             'pix_key.required' => 'Informe sua chave Pix.',
         ]);
-
-        $available = $user->availableBalance();
 
         if ($validated['amount'] > $available) {
             return back()->with('error', 'Saldo insuficiente. Disponível: R$ '.number_format($available, 2, ',', '.'));

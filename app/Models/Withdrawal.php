@@ -18,6 +18,13 @@ class Withdrawal extends Model
     /** @use HasFactory<WithdrawalFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'amount' => 'decimal:2',
+        'fee' => 'decimal:2',
+        'net_amount' => 'decimal:2',
+    ];
+
     #[Relates]
     public function freelancer()
     {

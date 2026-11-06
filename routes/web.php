@@ -147,6 +147,7 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     // Saques (freelancer)
     Route::get('/saques', [WithdrawalController::class, 'index'])->name('withdrawals.index');
     Route::post('/saques', [WithdrawalController::class, 'store'])->name('withdrawals.store');
+    Route::post('/saques/{withdrawal}/cancelar', [WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
 
     // Carteira / extrato financeiro
     Route::get('/carteira', [WalletController::class, 'index'])->name('wallet.index');

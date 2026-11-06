@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Support\Mask;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -53,7 +54,7 @@ class WalletService
                 $transactions->push([
                     'date' => $withdrawal->created_at,
                     'direction' => 'debito',
-                    'description' => 'Saque Pix para '.$this->maskPixKey($withdrawal->pix_key),
+                    'description' => 'Saque Pix para '.Mask::pixKey($withdrawal->pix_key),
                     'amount' => (float) $withdrawal->net_amount,
                     'status' => $withdrawal->status,
                     'status_label' => $this->withdrawalStatusLabel($withdrawal->status),
@@ -145,18 +146,5 @@ class WalletService
             'cancelado' => 'Cancelado',
             default => ucfirst($status),
         };
-    }
-
-    private function maskPixKey(?string $key): string
-    {
-        if (! $key) {
-            return 'chave não informada';
-        }
-
-        if (strlen($key) <= 6) {
-            return str_repeat('*', strlen($key));
-        }
-
-        return substr($key, 0, 3).str_repeat('*', max(3, strlen($key) - 6)).substr($key, -3);
     }
 }
