@@ -20,6 +20,11 @@ class Dispute extends Model
     /** @use HasFactory<DisputeFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'resolved_at' => 'datetime',
+        'partial_percentage' => 'decimal:2',
+    ];
+
     #[Relates]
     public function project()
     {

@@ -13,11 +13,16 @@ class DisputeController extends Controller
     public function __construct(private NotificationService $notifications) {}
 
     /**
-     * Lista disputas do usuário / admin.
+     * Lista disputas do usuário / admin (filtro: all | aberta | resolvida).
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
+
+        $filter = $request->get('status', 'all');
+        if (! in_array($filter, ['all', 'aberta', 'resolvida'], true)) {
+            $filter = 'all';
+        }
 
         $query = Dispute::with(['project', 'client', 'freelancer'])
             ->orderByDesc('created_at');
@@ -26,9 +31,19 @@ class DisputeController extends Controller
             $query->where(fn ($q) => $q->where('client_id', $user->id)->orWhere('freelancer_id', $user->id));
         }
 
-        $disputes = $query->paginate(20);
+        $summary = [
+            'total' => (clone $query)->count(),
+            'open' => (clone $query)->where('status', 'aberta')->count(),
+            'resolved' => (clone $query)->where('status', 'resolvida')->count(),
+        ];
 
-        return view('disputes.index', compact('disputes'));
+        if ($filter !== 'all') {
+            $query->where('status', $filter);
+        }
+
+        $disputes = $query->paginate(20)->withQueryString();
+
+        return view('disputes.index', compact('disputes', 'summary', 'filter'));
     }
 
     /**
@@ -47,7 +62,13 @@ class DisputeController extends Controller
                 ->with('info', 'Já existe uma disputa aberta para este projeto.');
         }
 
-        return view('disputes.create', compact('project'));
+        $project->load(['client', 'acceptedProposal.freelancer']);
+        $escrowPayment = $project->payments()
+            ->whereIn('status', ['custodia', 'pendente'])
+            ->latest('created_at')
+            ->first();
+
+        return view('disputes.create', compact('project', 'escrowPayment'));
     }
 
     /**
@@ -111,9 +132,14 @@ class DisputeController extends Controller
             abort(403);
         }
 
-        $dispute->load(['project', 'client', 'freelancer', 'resolver']);
+        $dispute->load(['project.client', 'project.acceptedProposal.freelancer', 'client', 'freelancer', 'resolver']);
 
-        return view('disputes.show', compact('dispute'));
+        $escrowPayment = $dispute->project->payments()
+            ->whereIn('status', ['custodia', 'pendente', 'liberado', 'estornado'])
+            ->latest('created_at')
+            ->first();
+
+        return view('disputes.show', compact('dispute', 'escrowPayment'));
     }
 
     /**
