@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Plan;
+use App\Models\Proposal;
 use App\Models\UserPlanSubscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,12 +16,30 @@ class UserPlanSubscriptionController extends Controller
      */
     public function index()
     {
-        $plans = Plan::active()->orderBy('sort_order')->get();
-        $currentSubscription = Auth::user()->subscriptions()->where('status', 'ativo')
-            ->where('ends_at', '>', now())
-            ->first();
+        $plans = Plan::active()->with('features')->orderBy('sort_order')->get();
 
-        return view('subscriptions.index', compact('plans', 'currentSubscription'));
+        $currentSubscription = Auth::user()
+            ? Auth::user()->subscriptions()->where('status', 'ativo')
+                ->where('ends_at', '>', now())
+                ->with('plan')
+                ->first()
+            : null;
+
+        $usage = [
+            'proposals_used' => 0,
+            'portfolio_used' => 0,
+            'days_remaining' => 0,
+        ];
+
+        if ($currentSubscription) {
+            $usage['proposals_used'] = Proposal::where('freelancer_id', Auth::id())
+                ->where('created_at', '>=', now()->startOfMonth())
+                ->count();
+            $usage['portfolio_used'] = Auth::user()->portfolioItems()->count();
+            $usage['days_remaining'] = max(0, (int) now()->diffInDays($currentSubscription->ends_at, false));
+        }
+
+        return view('subscriptions.index', compact('plans', 'currentSubscription', 'usage'));
     }
 
     /**

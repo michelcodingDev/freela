@@ -18,6 +18,12 @@ class UserPlanSubscription extends Model
     /** @use HasFactory<UserPlanSubscriptionFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'price_paid' => 'decimal:2',
+    ];
+
     #[Relates]
     public function user()
     {

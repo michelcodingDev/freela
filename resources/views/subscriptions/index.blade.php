@@ -8,17 +8,38 @@
 
         @if ($currentSubscription)
             <div class="bg-green-50 rounded-2xl p-6 border border-green-100 mb-8">
-                <div class="flex items-center justify-between">
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
                         <h2 class="text-lg font-bold text-gray-900">Seu Plano Atual</h2>
                         <p class="text-green-700 text-sm">{{ $currentSubscription->plan->name }}</p>
                     </div>
                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                         <i data-lucide="check-circle" class="w-3 h-3"></i>
-                        Ativo até {{ $currentSubscription->ends_at->format('d/m/Y') }}
+                        Ativo até {{ $currentSubscription->ends_at->format('d/m/Y') }} ({{ $usage['days_remaining'] }} dias restantes)
                     </span>
                 </div>
-                <form method="POST" action="{{ route('subscriptions.cancel') }}" class="mt-6">
+
+                <div class="grid sm:grid-cols-2 gap-4 mt-5">
+                    <div class="bg-white rounded-xl border border-green-100 p-4">
+                        <p class="text-xs font-medium text-gray-600">
+                            Propostas este mês: <strong class="text-gray-900">{{ $usage['proposals_used'] }}/{{ $currentSubscription->plan->proposals_per_month }}</strong>
+                        </p>
+                        <div class="h-2 rounded-full bg-gray-100 mt-2 overflow-hidden">
+                            <div class="h-full bg-green-600 rounded-full" style="width: {{ $currentSubscription->plan->proposals_per_month > 0 ? min(100, round(($usage['proposals_used'] / $currentSubscription->plan->proposals_per_month) * 100)) : 0 }}%"></div>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-xl border border-green-100 p-4">
+                        <p class="text-xs font-medium text-gray-600">
+                            Itens no portfólio: <strong class="text-gray-900">{{ $usage['portfolio_used'] }}/{{ $currentSubscription->plan->max_portfolio_items }}</strong>
+                        </p>
+                        <div class="h-2 rounded-full bg-gray-100 mt-2 overflow-hidden">
+                            <div class="h-full bg-green-600 rounded-full" style="width: {{ $currentSubscription->plan->max_portfolio_items > 0 ? min(100, round(($usage['portfolio_used'] / $currentSubscription->plan->max_portfolio_items) * 100)) : 0 }}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ route('subscriptions.cancel') }}" class="mt-6"
+                      onsubmit="return confirm('Cancelar sua assinatura? Você voltará ao plano Free ao final do período.')">
                     @csrf
                     <button type="submit"
                             class="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium transition-all shadow-sm">
@@ -65,17 +86,32 @@
 
                         <div class="space-y-3 mb-6">
                             <div class="flex items-center gap-2 text-sm text-gray-700">
+                                <i data-lucide="percent" class="w-4 h-4 text-gray-400"></i>
+                                <span>Comissão de {{ $plan->commission_percentage }}% por projeto</span>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-gray-700">
                                 <i data-lucide="file-text" class="w-4 h-4 text-gray-400"></i>
                                 <span>{{ $plan->proposals_per_month }} propostas/mês</span>
                             </div>
                             <div class="flex items-center gap-2 text-sm text-gray-700">
                                 <i data-lucide="image" class="w-4 h-4 text-gray-400"></i>
-                                <span>{{ $plan->max_portfolio_items }} itens portfólio</span>
+                                <span>{{ $plan->max_portfolio_items }} itens no portfólio</span>
                             </div>
                             <div class="flex items-center gap-2 text-sm text-gray-700">
                                 <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
                                 <span>Saque em {{ $plan->withdrawal_days }} dias úteis</span>
                             </div>
+                            @if ($plan->features->isNotEmpty())
+                                <div class="border-t border-gray-100 pt-3 space-y-2">
+                                    @foreach ($plan->features as $feature)
+                                        <div class="flex items-start gap-2 text-sm {{ $feature->is_included ? 'text-gray-700' : 'text-gray-400 line-through' }}">
+                                            <i data-lucide="{{ $feature->is_included ? 'check-circle' : 'x-circle' }}"
+                                               class="w-4 h-4 mt-0.5 shrink-0 {{ $feature->is_included ? 'text-green-500' : 'text-gray-300' }}"></i>
+                                            <span>{{ $feature->name }}</span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         @if (!$currentSubscription || $currentSubscription->plan_id !== $plan->id)
