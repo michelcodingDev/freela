@@ -25,11 +25,24 @@ class AdminDashboardController extends Controller
         }
 
         $period = $request->get('period', '12m'); // 12m, 6m, 3m, 1m
+
+        if (! in_array($period, ['12m', '6m', '3m', '1m'], true)) {
+            $period = '12m';
+        }
+
         $months = $this->getMonths($period);
+        [$periodStart, $periodEnd] = $this->monthRange($months);
+
+        $periodLabel = match ($period) {
+            '6m' => 'Últimos 6 meses',
+            '3m' => 'Últimos 3 meses',
+            '1m' => 'Último mês',
+            default => 'Últimos 12 meses',
+        };
 
         // Cards de visão geral
         $totalUsers = User::count();
-        $newUsers = User::where('created_at', '>=', now()->subDays(30))->count();
+        $newUsers = User::whereBetween('created_at', [$periodStart, $periodEnd])->count();
         $activeUsers = User::where('status', 'ativo')->count();
         $clientUsers = User::where('type', 'cliente')->count();
         $freelancerUsers = User::where('type', 'freelancer')->count();
@@ -75,7 +88,8 @@ class AdminDashboardController extends Controller
             'totalGMV', 'platformRevenue', 'escrowBalance', 'avgTicket',
             'monthlyGMV', 'monthlyRevenue', 'newUsersByMonth', 'months',
             'projectsByCategory', 'paymentsByMethod', 'projectsByStatus',
-            'conversionFunnel', 'proposalsHeatmap', 'alerts', 'period'
+            'conversionFunnel', 'proposalsHeatmap', 'alerts', 'period',
+            'periodLabel', 'periodStart', 'periodEnd',
         ));
     }
 

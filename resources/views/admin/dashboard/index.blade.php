@@ -16,9 +16,15 @@ use App\Models\Dispute;
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Dashboard Admin</h1>
                 <p class="text-gray-600">Visão geral da plataforma FreelaJob</p>
+                <p class="text-xs text-gray-500 mt-1">
+                    Período: <strong class="text-gray-700">{{ $periodLabel }}</strong>
+                    ({{ $periodStart->format('d/m/Y') }} — {{ $periodEnd->format('d/m/Y') }})
+                    · Os gráficos mensais e os novos usuários respeitam o período selecionado.
+                </p>
             </div>
             <div class="flex gap-3">
-                <select id="periodSelector" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                <label for="periodSelector" class="sr-only">Filtrar por período</label>
+                <select id="periodSelector" aria-label="Filtrar por período" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
                     <option value="12m" {{ $period === '12m' ? 'selected' : '' }}>Últimos 12 meses</option>
                     <option value="6m" {{ $period === '6m' ? 'selected' : '' }}>Últimos 6 meses</option>
                     <option value="3m" {{ $period === '3m' ? 'selected' : '' }}>Últimos 3 meses</option>
@@ -59,7 +65,7 @@ use App\Models\Dispute;
                     <div>
                         <p class="text-sm font-semibold text-gray-500 uppercase tracking-wider">Total Usuários</p>
                         <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ number_format($totalUsers) }}</h3>
-                        <p class="text-xs text-green-600 font-medium mt-2">+{{ number_format($newUsers) }} novos (30d)</p>
+                        <p class="text-xs text-green-600 font-medium mt-2">+{{ number_format($newUsers) }} novos no período</p>
                     </div>
                     <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
                         <i data-lucide="users" class="w-6 h-6"></i>
@@ -164,7 +170,7 @@ use App\Models\Dispute;
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-lg font-bold text-gray-900">GMV vs Receita Mensal</h3>
-                    <span class="text-xs text-gray-500">Últimos 12 meses</span>
+                    <span class="text-xs text-gray-500">{{ $periodLabel }}</span>
                 </div>
                 <div class="h-64">
                     <canvas id="gmvRevenueChart"></canvas>
