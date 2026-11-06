@@ -77,6 +77,7 @@ Route::middleware(['api.token', 'throttle:api'])->name('api.')->group(function (
     // Notificações
     Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notificacoes/ler-todas', [NotificationController::class, 'readAll'])->name('notifications.readAll');
+    Route::post('/notificacoes/{notification}/ler', [NotificationController::class, 'read'])->name('notifications.read');
 
     // Freelancers
     Route::get('/freelancers', [FreelancerController::class, 'index'])->name('freelancers.index');
