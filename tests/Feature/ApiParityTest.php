@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\PortfolioItem;
 use App\Models\Project;
+use App\Models\Proposal;
 use App\Models\Review;
 use App\Models\User;
 use App\Models\Withdrawal;
@@ -124,5 +125,53 @@ class ApiParityTest extends TestCase
             'Item privado API',
             $response->getContent()
         );
+    }
+
+    public function test_api_dispute_requires_executing_project_and_notifies_other_party(): void
+    {
+        $client = User::factory()->cliente()->create();
+        $freelancer = User::factory()->freelancer()->create();
+        $token = $this->tokenFor($client);
+        $category = Category::factory()->create();
+
+        $project = Project::factory()->create([
+            'client_id' => $client->id,
+            'category_id' => $category->id,
+            'status' => 'aguardando_propostas',
+        ]);
+
+        Proposal::factory()->accepted()->create([
+            'project_id' => $project->id,
+            'freelancer_id' => $freelancer->id,
+        ]);
+
+        $this->withToken($token)
+            ->postJson(route('api.projects.disputes.store', $project), [
+                'reason' => 'Motivo detalhado para testar a guarda da API.',
+                'argument' => 'Argumento do cliente.',
+            ])
+            ->assertStatus(422);
+
+        $project->update(['status' => 'em_andamento']);
+
+        $this->withToken($token)
+            ->postJson(route('api.projects.disputes.store', $project), [
+                'reason' => 'Motivo detalhado para testar a guarda da API.',
+                'argument' => 'Argumento do cliente.',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('success', true);
+
+        $this->assertSame('disputa', $project->fresh()->status);
+        $this->assertDatabaseHas('notifications', [
+            'user_id' => $freelancer->id,
+            'type' => 'disputa_aberta',
+        ]);
+
+        $this->withToken($token)
+            ->postJson(route('api.projects.disputes.store', $project), [
+                'reason' => 'Segunda disputa não pode existir.',
+            ])
+            ->assertStatus(422);
     }
 }

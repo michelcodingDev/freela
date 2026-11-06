@@ -5,10 +5,13 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Dispute;
 use App\Models\Project;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 
 class DisputeController extends Controller
 {
+    public function __construct(private NotificationService $notifications) {}
+
     public function index(Request $request)
     {
         $user = $request->user();
@@ -25,6 +28,14 @@ class DisputeController extends Controller
     {
         if (! $project->isParticipant($request->user()->id)) {
             return response()->json(['success' => false, 'message' => 'Sem acesso'], 403);
+        }
+
+        if (! in_array($project->status, ['em_andamento', 'aguardando_liberacao', 'aguardando_pagamento'], true)) {
+            return response()->json(['success' => false, 'message' => 'Disputa disponível apenas para projetos em execução.'], 422);
+        }
+
+        if ($project->disputes()->where('status', 'aberta')->exists()) {
+            return response()->json(['success' => false, 'message' => 'Já existe uma disputa aberta para este projeto.'], 422);
         }
 
         $validated = $request->validate([
@@ -52,6 +63,15 @@ class DisputeController extends Controller
 
         $dispute = Dispute::create($data);
         $project->update(['status' => 'disputa']);
+
+        $other = $request->user()->id === $project->client_id ? $proposal->freelancer : $project->client;
+        $this->notifications->notify(
+            $other,
+            'disputa_aberta',
+            'Disputa aberta',
+            'Uma disputa foi aberta no projeto "'.$project->title.'". Valores em custódia bloqueados.',
+            ['project_id' => $project->id]
+        );
 
         return response()->json(['success' => true, 'data' => $dispute], 201);
     }
