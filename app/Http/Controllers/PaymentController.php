@@ -118,12 +118,26 @@ class PaymentController extends Controller
         $method = $request->query('method', 'pix');
         $payload = $request->all();
 
-        // Verificação opcional por segredo (se configurado)
+        // Verificação por segredo: aceita HMAC-SHA256 do corpo (X-Webhook-Signature)
+        // ou o segredo compartilhado no header legado (X-Webhook-Secret).
         $secret = config('services.pagseguro.webhook_secret');
-        if ($secret && $request->header('X-Webhook-Secret') !== $secret) {
-            Log::warning('Webhook rejeitado por segredo inválido');
 
-            return response()->json(['success' => false, 'message' => 'Assinatura inválida'], 401);
+        if ($secret) {
+            $expectedSignature = hash_hmac('sha256', $request->getContent(), $secret);
+            $providedSignature = (string) $request->header('X-Webhook-Signature', '');
+            $providedSecret = (string) $request->header('X-Webhook-Secret', '');
+
+            $signatureValid = $providedSignature !== '' && hash_equals($expectedSignature, $providedSignature);
+            $secretValid = $providedSecret !== '' && hash_equals((string) $secret, $providedSecret);
+
+            if (! $signatureValid && ! $secretValid) {
+                Log::warning('Webhook rejeitado por assinatura inválida', [
+                    'method' => $method,
+                    'ip' => $request->ip(),
+                ]);
+
+                return response()->json(['success' => false, 'message' => 'Assinatura inválida'], 401);
+            }
         }
 
         Log::info('Webhook recebido', [

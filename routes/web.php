@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DashboardController;
@@ -84,6 +85,9 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::post('/projetos/{project}/turbinar', [ProjectController::class, 'boost'])->name('projects.boost');
     Route::post('/projetos/{project}/aprovar', [ProjectController::class, 'approve'])->name('projects.approve');
     Route::post('/projetos/{project}/reprovar', [ProjectController::class, 'reject'])->name('projects.reject');
+
+    // Anexos (download seguro)
+    Route::get('/anexos/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
 
     // Convites (RF04)
     Route::post('/projetos/{project}/convidar', [ProjectInviteController::class, 'store'])->name('projects.invites.store');

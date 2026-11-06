@@ -104,7 +104,7 @@ use Illuminate\Support\Facades\Storage; ?>
                                         <i data-lucide="paperclip" class="w-4 h-4 text-gray-400"></i>
                                         <span class="text-sm text-gray-700">{{ $attachment->original_name }}</span>
                                     </div>
-                                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                    <a href="{{ route('attachments.download', $attachment) }}" target="_blank"
                                        class="text-sm text-green-600 hover:text-green-700 font-medium">
                                         Baixar
                                     </a>
