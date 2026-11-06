@@ -5,10 +5,13 @@ namespace App\Services\Payment;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 
 class PaymentService
 {
+    public function __construct(private NotificationService $notifications) {}
+
     /**
      * @var PaymentStrategyInterface
      */
@@ -175,12 +178,33 @@ class PaymentService
         ];
 
         $newStatus = $statusMap[$response->status] ?? $response->status;
+        $previousStatus = $payment->status;
 
         $payment->update([
             'status' => $newStatus,
             'gateway_response' => array_merge($payment->gateway_response ?? [], $response->data),
             'paid_at' => in_array($newStatus, ['custodia']) ? now() : $payment->paid_at,
         ]);
+
+        if ($newStatus === 'custodia' && $previousStatus !== 'custodia') {
+            $payment->loadMissing(['project', 'freelancer', 'client']);
+
+            $this->notifications->notify(
+                $payment->freelancer,
+                'pagamento_custodia',
+                'Pagamento em custódia',
+                'O pagamento de R$ '.number_format((float) $payment->amount, 2, ',', '.')." do projeto \"{$payment->project->title}\" foi confirmado e está em custódia.",
+                ['project_id' => $payment->project_id]
+            );
+
+            $this->notifications->notify(
+                $payment->client,
+                'pagamento_confirmado',
+                'Pagamento confirmado',
+                "O pagamento do projeto \"{$payment->project->title}\" está em custódia. O freelancer já pode iniciar.",
+                ['project_id' => $payment->project_id]
+            );
+        }
 
         Log::info('Pagamento atualizado via webhook', [
             'payment_id' => $payment->id,
@@ -226,6 +250,22 @@ class PaymentService
             'status' => 'concluido',
             'completed_at' => now(),
         ]);
+
+        $this->notifications->notify(
+            $payment->freelancer,
+            'pagamento_liberado',
+            'Pagamento liberado',
+            'R$ '.number_format((float) $payment->net_amount, 2, ',', '.')." foi liberado para sua carteira referente ao projeto \"{$project->title}\".",
+            ['project_id' => $project->id]
+        );
+
+        $this->notifications->notify(
+            $payment->client,
+            'pagamento_liberado',
+            'Pagamento liberado ao freelancer',
+            "O pagamento do projeto \"{$project->title}\" foi liberado. Avalie o freelancer!",
+            ['project_id' => $project->id]
+        );
 
         Log::info('Pagamento liberado para freelancer', [
             'payment_id' => $payment->id,

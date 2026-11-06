@@ -35,6 +35,14 @@ class EscrowAutoRelease extends Command
                 "O pagamento do projeto \"{$payment->project->title}\" foi liberado após 5 dias em custódia.",
                 ['project_id' => $payment->project_id]
             );
+
+            $notifications->notify(
+                $payment->client,
+                'liberacao_automatica',
+                'Pagamento liberado automaticamente',
+                "O pagamento do projeto \"{$payment->project->title}\" foi liberado automaticamente após 5 dias sem contestação.",
+                ['project_id' => $payment->project_id]
+            );
         }
 
         $this->info("{$count} pagamento(s) liberado(s) automaticamente.");

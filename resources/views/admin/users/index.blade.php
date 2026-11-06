@@ -3,38 +3,45 @@
 <x-layout title="Usuários - Admin - FreelaJob">
 
     <div class="max-w-7xl mx-auto py-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Todos os Usuários</h1>
                 <p class="text-gray-600">Gerencie todos os usuários da plataforma.</p>
             </div>
+            <a href="{{ route('admin.reports.users', request()->query()) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-sm shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+            </a>
         </div>
 
         <!-- Filtros -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <form method="GET" action="{{ route('admin.users') }}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
             <div class="flex flex-wrap gap-4">
-                <div class="relative">
-                    <input type="text" placeholder="Buscar por nome ou e-mail..."
+                <div class="relative md:w-80">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por nome ou e-mail..."
                            class="w-full px-4 py-2.5 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
                     <div class="absolute left-3 top-1/2 -mt-2.5">
                         <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
                     </div>
                 </div>
-                <select class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                    <option>Todos os tipos</option>
-                    <option>Cliente</option>
-                    <option>Freelancer</option>
-                    <option>Admin</option>
+                <select name="type" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                    <option value="">Todos os tipos</option>
+                    @foreach (['cliente' => 'Cliente', 'freelancer' => 'Freelancer', 'admin' => 'Admin'] as $value => $label)
+                        <option value="{{ $value }}" {{ request('type') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
-                <select class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                    <option>Todos os status</option>
-                    <option>Ativo</option>
-                    <option>Inativo</option>
-                    <option>Suspenso</option>
-                    <option>Banido</option>
+                <select name="status" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                    <option value="">Todos os status</option>
+                    @foreach (['ativo' => 'Ativo', 'inativo' => 'Inativo', 'suspenso' => 'Suspenso', 'banido' => 'Banido'] as $value => $label)
+                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
+                <button class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">Filtrar</button>
+                @if (request()->hasAny(['search', 'type', 'status']))
+                    <a href="{{ route('admin.users') }}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Limpar</a>
+                @endif
             </div>
-        </div>
+        </form>
 
         <!-- Tabela de usuários -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -83,7 +90,9 @@
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $user->created_at->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4">
                                     <div class="flex flex-wrap gap-2">
-                                        <a href="{{ route('freelancers.show', $user) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver</a>
+                                        @if ($user->isFreelancer())
+                                            <a href="{{ route('freelancers.show', $user) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver</a>
+                                        @endif
                                         @if (!$user->isAdmin())
                                             <form method="POST" action="{{ route('admin.users.status', $user) }}" class="flex gap-1">
                                                 @csrf

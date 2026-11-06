@@ -3,36 +3,50 @@
 <x-layout title="Projetos - Admin - FreelaJob">
 
     <div class="max-w-7xl mx-auto py-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Todos os Projetos</h1>
                 <p class="text-gray-600">Gerencie todos os projetos da plataforma.</p>
             </div>
+            <a href="{{ route('admin.reports.projects', request()->query()) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-sm shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+            </a>
         </div>
 
         <!-- Filtros -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+        <form method="GET" action="{{ route('admin.projects') }}" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
             <div class="flex flex-wrap gap-4">
-                <div class="relative">
-                    <input type="text" placeholder="Buscar por título..."
+                <div class="relative md:w-80">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por título..."
                            class="w-full px-4 py-2.5 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
                     <div class="absolute left-3 top-1/2 -mt-2.5">
                         <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
                     </div>
                 </div>
-                <select class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                    <option>Todos os status</option>
-                    <option>Aguardando Aprovação</option>
-                    <option>Aguardando Propostas</option>
-                    <option>Aguardando Pagamento</option>
-                    <option>Em Andamento</option>
-                    <option>Aguardando Liberação</option>
-                    <option>Concluído</option>
-                    <option>Cancelado</option>
-                    <option>Disputa</option>
+                <select name="status" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                    <option value="">Todos os status</option>
+                    @foreach ([
+                        'aguardando_aprovacao' => 'Aguardando Aprovação',
+                        'aguardando_propostas' => 'Aguardando Propostas',
+                        'aguardando_pagamento' => 'Aguardando Pagamento',
+                        'em_andamento' => 'Em Andamento',
+                        'aguardando_liberacao' => 'Aguardando Liberação',
+                        'concluido' => 'Concluído',
+                        'cancelado' => 'Cancelado',
+                        'disputa' => 'Disputa',
+                        'fechado' => 'Fechado',
+                        'reprovado' => 'Reprovado',
+                    ] as $value => $label)
+                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                    @endforeach
                 </select>
+                <button class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">Filtrar</button>
+                @if (request()->hasAny(['search', 'status']))
+                    <a href="{{ route('admin.projects') }}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Limpar</a>
+                @endif
             </div>
-        </div>
+        </form>
 
         <!-- Tabela de projetos -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

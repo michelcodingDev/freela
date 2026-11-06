@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AdminReportController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
@@ -196,6 +197,11 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
         Route::get('/saques', [WithdrawalController::class, 'adminIndex'])->name('withdrawals.index');
         Route::post('/saques/{withdrawal}/pagar', [WithdrawalController::class, 'adminPay'])->name('withdrawals.pay');
         Route::post('/saques/{withdrawal}/cancelar', [WithdrawalController::class, 'adminCancel'])->name('withdrawals.cancel');
+
+        // Admin: relatórios CSV
+        Route::get('/relatorios/pagamentos', [AdminReportController::class, 'payments'])->name('reports.payments');
+        Route::get('/relatorios/usuarios', [AdminReportController::class, 'users'])->name('reports.users');
+        Route::get('/relatorios/projetos', [AdminReportController::class, 'projects'])->name('reports.projects');
     });
 
     // Logs de Auditoria (apenas admin)

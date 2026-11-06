@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Withdrawal;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class WithdrawalController extends Controller
 {
+    public function __construct(private NotificationService $notifications) {}
+
     /**
      * Lista saques do freelancer.
      */
@@ -92,6 +95,14 @@ class WithdrawalController extends Controller
         }
 
         $withdrawal->update(['status' => 'pago', 'paid_at' => now()]);
+
+        $this->notifications->notify(
+            $withdrawal->freelancer,
+            'saque_pago',
+            'Saque pago',
+            'Seu saque de R$ '.number_format((float) $withdrawal->net_amount, 2, ',', '.').' foi pago via Pix.',
+            []
+        );
 
         return back()->with('success', 'Saque marcado como pago.');
     }

@@ -128,19 +128,45 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * Lista todos os pagamentos (admin).
+     * Lista todos os pagamentos (admin), com filtros e resumo real.
      */
-    public function payments()
+    public function payments(Request $request)
     {
         if (! auth()->user()->isAdmin()) {
             abort(403, 'Acesso restrito a administradores.');
         }
 
-        $payments = Payment::with(['client', 'freelancer', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Payment::with(['client', 'freelancer', 'project'])
+            ->orderBy('created_at', 'desc');
 
-        return view('admin.payments.index', compact('payments'));
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('method')) {
+            $query->where('method', $request->method);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhereHas('project', fn ($p) => $p->where('title', 'like', '%'.$search.'%'))
+                    ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))
+                    ->orWhereHas('freelancer', fn ($f) => $f->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'));
+            });
+        }
+
+        $payments = $query->paginate(20)->withQueryString();
+
+        $summary = [
+            'escrow' => (float) Payment::where('status', 'custodia')->sum('amount'),
+            'today_count' => Payment::whereDate('created_at', today())->count(),
+            'today_fees' => (float) Payment::whereDate('created_at', today())->where('status', 'liberado')->sum('platform_fee'),
+            'total_gmv' => (float) Payment::where('status', 'liberado')->sum('amount'),
+        ];
+
+        return view('admin.payments.index', compact('payments', 'summary'));
     }
 
     /**

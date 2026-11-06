@@ -3,57 +3,68 @@
 <x-layout title="Pagamentos - Admin - FreelaJob">
 
     <div class="max-w-7xl mx-auto py-8">
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">Todos os Pagamentos</h1>
                 <p class="text-gray-600">Gerencie todos os pagamentos da plataforma.</p>
             </div>
+            <a href="{{ route('admin.reports.payments', request()->query()) }}"
+               class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold text-sm shadow-sm">
+                <i data-lucide="download" class="w-4 h-4"></i> Exportar CSV
+            </a>
         </div>
 
         <!-- Cards de resumo -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <p class="text-sm font-semibold text-gray-500 uppercase">Total em Custódia</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">R$ 0,00</p>
+                <p class="text-2xl font-bold text-blue-600 mt-1">R$ {{ number_format($summary['escrow'], 2, ',', '.') }}</p>
             </div>
             <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <p class="text-sm font-semibold text-gray-500 uppercase">Pagamentos Hoje</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">0</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ $summary['today_count'] }}</p>
             </div>
             <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <p class="text-sm font-semibold text-gray-500 uppercase">Taxa Plataforma (Hoje)</p>
-                <p class="text-2xl font-bold text-gray-900 mt-1">R$ 0,00</p>
+                <p class="text-2xl font-bold text-green-600 mt-1">R$ {{ number_format($summary['today_fees'], 2, ',', '.') }}</p>
+            </div>
+            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                <p class="text-sm font-semibold text-gray-500 uppercase">GMV Liberado</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">R$ {{ number_format($summary['total_gmv'], 2, ',', '.') }}</p>
             </div>
         </div>
 
         <!-- Tabela de pagamentos -->
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-100">
+            <form method="GET" action="{{ route('admin.payments') }}" class="p-6 border-b border-gray-100">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div class="relative">
-                        <input type="text" placeholder="Buscar pagamentos..."
+                    <div class="relative md:w-80">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar por ID, projeto, nome ou e-mail..."
                                class="w-full px-4 py-2.5 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
                         <div class="absolute left-3 top-1/2 -mt-2.5">
                             <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <select class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                            <option>Todos os métodos</option>
-                            <option>Pix</option>
-                            <option>Cartão</option>
-                            <option>Boleto</option>
+                    <div class="flex flex-wrap gap-2">
+                        <select name="method" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">Todos os métodos</option>
+                            @foreach (['pix' => 'Pix', 'cartao' => 'Cartão', 'boleto' => 'Boleto'] as $value => $label)
+                                <option value="{{ $value }}" {{ request('method') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
                         </select>
-                        <select class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
-                            <option>Todos os status</option>
-                            <option>Pendente</option>
-                            <option>Custódia</option>
-                            <option>Liberado</option>
-                            <option>Estornado</option>
+                        <select name="status" class="px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none">
+                            <option value="">Todos os status</option>
+                            @foreach (['pendente' => 'Pendente', 'custodia' => 'Custódia', 'liberado' => 'Liberado', 'estornado' => 'Estornado'] as $value => $label)
+                                <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                            @endforeach
                         </select>
+                        <button class="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold">Filtrar</button>
+                        @if (request()->hasAny(['search', 'method', 'status']))
+                            <a href="{{ route('admin.payments') }}" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium">Limpar</a>
+                        @endif
                     </div>
                 </div>
-            </div>
+            </form>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left">
