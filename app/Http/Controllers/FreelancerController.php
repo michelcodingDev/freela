@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Review;
 use App\Models\Skill;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -17,8 +16,8 @@ class FreelancerController extends Controller
         $query = User::where('type', 'freelancer')
             ->where('status', 'ativo')
             ->with(['profile', 'portfolioItems', 'skills'])
-            ->withAvg('reviewsReceived as rating_avg', 'rating')
-            ->withCount('reviewsReceived');
+            ->withAvg(['reviewsReceived as rating_avg' => fn ($q) => $q->where('is_public', true)], 'rating')
+            ->withCount(['reviewsReceived' => fn ($q) => $q->where('is_public', true)]);
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -52,16 +51,48 @@ class FreelancerController extends Controller
      */
     public function show(User $freelancer)
     {
-        if ($freelancer->type !== 'freelancer') {
+        if ($freelancer->type !== 'freelancer' || $freelancer->status !== 'ativo') {
             abort(404);
         }
 
-        $freelancer->load(['profile', 'portfolioItems', 'skills']);
-        $reviews = Review::where('to_user_id', $freelancer->id)
-            ->with(['fromUser', 'project'])
-            ->orderByDesc('created_at')
-            ->paginate(10);
+        $freelancer->load([
+            'profile',
+            'skills',
+            'portfolioItems' => fn ($q) => $q->where('is_public', true)->orderByDesc('created_at'),
+        ]);
 
-        return view('freelancers.show', compact('freelancer', 'reviews'));
+        $publicReviews = $freelancer->reviewsReceived()->where('is_public', true);
+
+        $ratingAvg = (float) ($publicReviews->avg('rating') ?? 0);
+        $ratingCount = (clone $publicReviews)->count();
+
+        $ratingDistribution = (clone $publicReviews)
+            ->selectRaw('rating, COUNT(*) as total')
+            ->groupBy('rating')
+            ->pluck('total', 'rating')
+            ->toArray();
+
+        $distribution = [];
+        for ($stars = 5; $stars >= 1; $stars--) {
+            $count = (int) ($ratingDistribution[$stars] ?? 0);
+            $distribution[$stars] = [
+                'count' => $count,
+                'percent' => $ratingCount > 0 ? round(($count / $ratingCount) * 100) : 0,
+            ];
+        }
+
+        $reviews = (clone $publicReviews)
+            ->with(['fromUser.profile', 'project'])
+            ->orderByDesc('created_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('freelancers.show', compact(
+            'freelancer',
+            'reviews',
+            'ratingAvg',
+            'ratingCount',
+            'distribution',
+        ));
     }
 }
