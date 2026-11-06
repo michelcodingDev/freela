@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProposalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,4 +47,11 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::get('/projetos/{project}/editar', [ProjectController::class, 'edit'])->name('projects.edit');
     Route::put('/projetos/{project}', [ProjectController::class, 'update'])->name('projects.update');
     Route::post('/projetos/{project}/fechar', [ProjectController::class, 'close'])->name('projects.close');
+
+    // Propostas
+    Route::get('/projetos/{project}/propostas', [ProposalController::class, 'index'])->name('proposals.index');
+    Route::get('/projetos/{project}/propostas/enviar', [ProposalController::class, 'create'])->name('proposals.create');
+    Route::post('/projetos/{project}/propostas', [ProposalController::class, 'store'])->name('proposals.store');
+    Route::post('/projetos/{project}/propostas/{proposal}/aceitar', [ProposalController::class, 'accept'])->name('proposals.accept');
+    Route::post('/projetos/{project}/propostas/{proposal}/rejeitar', [ProposalController::class, 'reject'])->name('proposals.reject');
 });
