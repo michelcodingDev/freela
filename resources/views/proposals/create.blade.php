@@ -13,6 +13,26 @@
                 </a>
             </div>
 
+            @if (! empty($usage))
+                <div class="rounded-xl border px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3 {{ $usage['atLimit'] ? 'bg-red-50 border-red-200 text-red-800' : 'bg-blue-50 border-blue-200 text-blue-800' }}">
+                    <p class="text-sm">
+                        <i data-lucide="send" class="w-4 h-4 inline mr-1"></i>
+                        Plano <strong>{{ $usage['plan'] }}</strong>: {{ $usage['used'] }}/{{ $usage['limit'] }}
+                        propostas enviadas este mês
+                        @if ($usage['atLimit'])
+                            — limite atingido.
+                        @else
+                            (faltam {{ $usage['remaining'] }}).
+                        @endif
+                    </p>
+                    @if ($usage['atLimit'])
+                        <a href="{{ route('subscriptions.index') }}" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold shrink-0">
+                            Ver planos
+                        </a>
+                    @endif
+                </div>
+            @endif
+
             <div class="bg-gray-50 p-6 rounded-xl border border-gray-100 mb-6">
                 <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Informações do Projeto</h3>
                 <div class="space-y-3">
@@ -47,7 +67,13 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('proposals.store', $project) }}" class="space-y-6">
+            @php
+                $commissionPercentage = $commission['percentage'] ?? 20;
+                $commissionMin = $commission['min'] ?? 5;
+            @endphp
+
+            <form method="POST" action="{{ route('proposals.store', $project) }}" class="space-y-6"
+                  x-data="{ offer: {{ old('offer', 0) }}, commissionPct: {{ $commissionPercentage }}, commissionMin: {{ $commissionMin }} }">
                 @csrf
 
                 <div>
@@ -56,6 +82,7 @@
                         <span class="absolute left-3 top-2.5 text-gray-400">R$</span>
                         <input type="number" name="offer" id="offer"
                                value="{{ old('offer') }}"
+                               x-model.number="offer"
                                required
                                step="0.01" min="1"
                                class="w-full px-4 py-2.5 pl-10 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm"
@@ -65,6 +92,24 @@
                     @error('offer')
                         <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <div class="bg-green-50 border border-green-100 rounded-xl p-4 text-sm" x-show="offer > 0" x-cloak>
+                    <p class="font-semibold text-green-800">Estimativa de recebimento</p>
+                    <div class="grid sm:grid-cols-3 gap-3 mt-2 text-green-900">
+                        <div>
+                            <p class="text-xs text-green-700">Taxa da plataforma ({{ $commissionPercentage }}%)</p>
+                            <p class="font-bold" x-text="'R$ ' + Math.max(offer * commissionPct / 100, commissionMin).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-green-700">Você receberia (antes do gateway)</p>
+                            <p class="font-bold" x-text="'R$ ' + (offer - Math.max(offer * commissionPct / 100, commissionMin)).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-green-700">Taxa do gateway</p>
+                            <p class="font-medium text-xs mt-1">Calculada no pagamento (Pix, cartão ou boleto).</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div>

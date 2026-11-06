@@ -35,7 +35,30 @@ class ProposalController extends Controller
                 ->with('info', 'Você já enviou uma proposta para este projeto.');
         }
 
-        return view('proposals.create', compact('project'));
+        $project->load(['client', 'category']);
+
+        $subscription = auth()->user()->subscriptions()->where('status', 'ativo')->where('ends_at', '>', now())->first();
+        $plan = $subscription?->plan;
+
+        $limit = (int) ($plan->proposals_per_month ?? 10);
+        $used = Proposal::where('freelancer_id', auth()->id())
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
+
+        $usage = [
+            'used' => $used,
+            'limit' => $limit,
+            'remaining' => max(0, $limit - $used),
+            'plan' => $plan?->name ?? 'Free',
+            'atLimit' => $used >= $limit,
+        ];
+
+        $commission = [
+            'percentage' => (float) ($plan->commission_percentage ?? 20),
+            'min' => (float) ($plan->min_commission ?? 5),
+        ];
+
+        return view('proposals.create', compact('project', 'usage', 'commission'));
     }
 
     /**
