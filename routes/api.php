@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ProjectController;
 use App\Http\Controllers\API\ProposalController;
 use App\Http\Controllers\API\RankingController;
 use App\Http\Controllers\API\ReviewController;
+use App\Http\Controllers\API\VerificationController;
 use App\Http\Controllers\API\WalletController;
 use App\Http\Controllers\API\WithdrawalController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,10 @@ Route::prefix('auth')->name('api.auth.')->group(function () {
 Route::middleware(['api.token', 'throttle:api'])->name('api.')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/me', [AuthController::class, 'me'])->name('me');
+
+    // Verificação de e-mail (não bloqueante)
+    Route::post('/email/verification-notification', [VerificationController::class, 'resend'])->middleware('throttle:6,1')->name('verification.send');
+    Route::get('/email/verification-status', [VerificationController::class, 'status'])->name('verification.status');
 
     // Perfil
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
