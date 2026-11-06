@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProposalController;
@@ -23,6 +24,9 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Webhook do PagSeguro (não requer autenticação)
+Route::post('/webhook/pagseguro/{method}', [PaymentController::class, 'webhook'])->name('payments.webhook');
 
 // Rotas protegidas (requer autenticação)
 Route::middleware(['auth', 'status:ativo'])->group(function () {
@@ -54,4 +58,15 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::post('/projetos/{project}/propostas', [ProposalController::class, 'store'])->name('proposals.store');
     Route::post('/projetos/{project}/propostas/{proposal}/aceitar', [ProposalController::class, 'accept'])->name('proposals.accept');
     Route::post('/projetos/{project}/propostas/{proposal}/rejeitar', [ProposalController::class, 'reject'])->name('proposals.reject');
+
+    // Pagamentos
+    Route::get('/pagamentos/processar/{project}', [PaymentController::class, 'process'])->name('payments.process');
+    Route::get('/pagamentos/boleto/{payment}', [PaymentController::class, 'boleto'])->name('payments.boleto');
+    Route::post('/pagamentos/liberar/{payment}', [PaymentController::class, 'release'])->name('payments.release');
+
+    // Admin: Pagamentos
+    Route::middleware(['can:ver todos pagamentos'])->group(function () {
+        Route::get('/admin/pagamentos', [PaymentController::class, 'adminIndex'])->name('admin.payments.index');
+        Route::get('/admin/pagamentos/{payment}', [PaymentController::class, 'adminShow'])->name('admin.payments.show');
+    });
 });
