@@ -152,7 +152,7 @@
                         <i data-lucide="search" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
                         <span>Buscar Projetos</span>
                     </a>
-                    <a href="#"
+                    <a href="{{ route('withdrawals.index') }}"
                        class="flex items-center gap-3 p-4 bg-green-50 rounded-xl border border-green-100 text-green-700 font-medium hover:bg-green-100 transition-all group">
                         <i data-lucide="wallet" class="w-5 h-5 group-hover:rotate-12 transition-transform"></i>
                         <span>Solicitar Saque</span>

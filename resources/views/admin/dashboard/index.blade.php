@@ -34,7 +34,7 @@ use App\Models\Dispute;
         </div>
 
         <!-- Alertas -->
-        @if ($alerts->count() > 0)
+        @if (count($alerts) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 @foreach ($alerts as $alert)
                     <div class="bg-{{ $alert['type'] === 'error' ? 'red' : ($alert['type'] === 'warning' ? 'amber' : 'blue') }}-50 border border-{{ $alert['type'] === 'error' ? 'red' : ($alert['type'] === 'warning' ? 'amber' : 'blue') }}-200 rounded-xl p-4 flex items-start gap-3">

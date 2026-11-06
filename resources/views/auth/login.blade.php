@@ -62,19 +62,12 @@
                         <span class="absolute inset-0 flex items-center">
                             <span class="w-full border-t border-gray-200"></span>
                         </span>
-                        <span class="px-4 text-xs font-medium text-gray-500 bg-white">Ou continue com</span>
+                        <span class="px-4 text-xs font-medium text-gray-500 bg-white">Acesso seguro</span>
                     </div>
 
-                    <div class="flex gap-4 mt-4">
-                        <a href="#" class="w-1/2 flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-all">
-                            <i data-lucide="google" class="w-4 h-4 mr-2"></i>
-                            Google
-                        </a>
-                        <a href="#" class="w-1/2 flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium transition-all">
-                            <i data-lucide="github" class="w-4 h-4 mr-2"></i>
-                            GitHub
-                        </a>
-                    </div>
+                    <p class="mt-4 text-center text-xs text-gray-500">
+                        Entre com seu e-mail e senha cadastrados. Login social estará disponível em breve.
+                    </p>
                 </div>
 
                 <div class="mt-8 text-center text-sm text-gray-600">

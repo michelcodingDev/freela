@@ -13,6 +13,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\LogController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PlanController;
 use App\Http\Controllers\PortfolioController;
@@ -46,6 +47,11 @@ Route::get('/ranking', RankingController::class)->name('ranking.index');
 // Projetos (listagem e detalhe são públicos; ações exigem login)
 Route::get('/projetos', [ProjectController::class, 'index'])->name('projects.index');
 Route::get('/projetos/{project}', [ProjectController::class, 'show'])->name('projects.show')->where('project', '[0-9]+');
+
+// Páginas institucionais
+Route::get('/termos', [PageController::class, 'terms'])->name('pages.terms');
+Route::get('/privacidade', [PageController::class, 'privacy'])->name('pages.privacy');
+Route::get('/suporte', [PageController::class, 'support'])->name('pages.support');
 
 // Rotas de Autenticação
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

@@ -160,8 +160,8 @@
                         <input type="checkbox" name="terms" id="terms" required
                                class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 mt-0.5">
                         <label for="terms" class="text-sm text-gray-600 leading-relaxed">
-                            Li e aceito os <a href="#" class="text-green-600 hover:underline font-medium">Termos de Uso</a> e
-                            <a href="#" class="text-green-600 hover:underline font-medium">Política de Privacidade</a>.
+                            Li e aceito os <a href="{{ route('pages.terms') }}" target="_blank" class="text-green-600 hover:underline font-medium">Termos de Uso</a> e
+                            <a href="{{ route('pages.privacy') }}" target="_blank" class="text-green-600 hover:underline font-medium">Política de Privacidade</a>.
                         </label>
                     </div>
 

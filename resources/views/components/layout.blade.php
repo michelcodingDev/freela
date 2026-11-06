@@ -23,6 +23,7 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        [x-cloak] { display: none !important; }
         .glass-panel {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
@@ -42,63 +43,146 @@
         .badge-banido { @apply badge-status bg-red-100 text-red-700; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen flex flex-col">
 
     <!-- Navbar -->
     <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center gap-3">
+            <div class="flex justify-between h-16 items-center gap-4">
+                <a href="{{ route('home') }}" class="flex items-center gap-3 shrink-0">
                     <div class="w-8 h-8 bg-gradient-to-br from-blue-700 to-green-600 rounded-lg flex items-center justify-center text-white font-bold">
                         <i data-lucide="zap" class="w-5 h-5"></i>
                     </div>
                     <span class="text-xl font-bold text-gray-900 tracking-tight">Freela<span class="text-green-600">Job</span></span>
-                </div>
+                </a>
 
-                <div class="hidden md:flex items-center gap-8">
+                <div class="hidden md:flex items-center gap-6">
                     <a href="{{ route('home') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Início</a>
                     <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Projetos</a>
                     <a href="{{ route('freelancers.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
+                    <a href="{{ route('ranking.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Ranking</a>
+                </div>
 
+                <div class="flex items-center gap-3">
                     @auth
-                        <a href="{{ route('dashboard') }}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg">
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-gray-500 hover:text-green-600 hover:bg-gray-50 rounded-lg transition" title="Notificações">
+                            <i data-lucide="bell" class="w-5 h-5"></i>
+                            @php $unreadNotifications = auth()->user()->appNotifications()->where('is_read', false)->count(); @endphp
+                            @if ($unreadNotifications > 0)
+                                <span class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] leading-none px-1.5 py-1 rounded-full font-bold">{{ $unreadNotifications > 99 ? '99+' : $unreadNotifications }}</span>
+                            @endif
+                        </a>
+
+                        <a href="{{ route('dashboard') }}" class="hidden sm:inline-flex bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition shadow-lg">
                             Meu Dashboard
                         </a>
+
+                        <div class="relative" x-data="{ open: false }" @click.outside="open = false">
+                            <button @click="open = !open" class="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-green-500">
+                                <img src="{{ auth()->user()->profile?->profile_photo ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=random' }}"
+                                     class="w-10 h-10 rounded-full border-2 border-gray-100 object-cover"
+                                     alt="Perfil">
+                                <i data-lucide="chevron-down" class="w-4 h-4 text-gray-400 hidden sm:block"></i>
+                            </button>
+
+                            <div x-show="open" x-transition x-cloak class="absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                                <div class="px-4 py-2 border-b border-gray-100">
+                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ auth()->user()->name }}</p>
+                                    <p class="text-xs text-gray-500 truncate">{{ auth()->user()->email }}</p>
+                                </div>
+                                <a href="{{ route('dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
+                                </a>
+                                <a href="{{ route('wallet.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <i data-lucide="wallet" class="w-4 h-4"></i> Carteira e extrato
+                                </a>
+                                @if (auth()->user()->isFreelancer())
+                                    <a href="{{ route('proposals.mine') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i> Minhas propostas
+                                    </a>
+                                @endif
+                                <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                    <i data-lucide="user" class="w-4 h-4"></i> Meu perfil
+                                </a>
+                                @if (auth()->user()->isAdmin())
+                                    <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        <i data-lucide="shield" class="w-4 h-4"></i> Painel admin
+                                    </a>
+                                @endif
+                                <form method="POST" action="{{ route('logout') }}" class="border-t border-gray-100 mt-1 pt-1">
+                                    @csrf
+                                    <button class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                        <i data-lucide="log-out" class="w-4 h-4"></i> Sair
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     @else
                         <a href="{{ route('login') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Entrar</a>
                         <a href="{{ route('register') }}" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg">Cadastrar</a>
                     @endauth
                 </div>
-
-                @auth
-                    <div class="flex items-center gap-3">
-                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-gray-500 hover:text-green-600 transition" title="Notificações">
-                            <i data-lucide="bell" class="w-5 h-5"></i>
-                        </a>
-                        <div class="text-right hidden sm:block">
-                            <p class="text-sm font-medium text-gray-900">{{ auth()->user()->name }}</p>
-                            <p class="text-xs text-gray-500 capitalize">{{ auth()->user()->type }}</p>
-                        </div>
-                        <img src="{{ auth()->user()->profile?->profile_photo ?? 'https://ui-avatars.com/api/?name=' . urlencode(auth()->user()->name) . '&background=random' }}"
-                             class="w-10 h-10 rounded-full border-2 border-gray-100 object-cover cursor-pointer"
-                             alt="Perfil">
-                    </div>
-                @endauth
             </div>
         </div>
+
+        @auth
+            @if (auth()->user()->isAdmin())
+                <div class="border-t border-gray-100 bg-gray-50/80">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex items-center gap-1 overflow-x-auto py-1.5 text-sm">
+                            @php
+                                $adminLinks = [
+                                    ['route' => 'admin.dashboard', 'label' => 'Dashboard', 'active' => 'admin.dashboard'],
+                                    ['route' => 'admin.users', 'label' => 'Usuários', 'active' => 'admin.users*'],
+                                    ['route' => 'admin.projects', 'label' => 'Projetos', 'active' => 'admin.projects*'],
+                                    ['route' => 'admin.payments', 'label' => 'Pagamentos', 'active' => 'admin.payments*'],
+                                    ['route' => 'admin.disputes', 'label' => 'Disputas', 'active' => 'admin.disputes*'],
+                                    ['route' => 'admin.withdrawals.index', 'label' => 'Saques', 'active' => 'admin.withdrawals*'],
+                                    ['route' => 'admin.subscriptions.index', 'label' => 'Assinaturas', 'active' => 'admin.subscriptions*'],
+                                    ['route' => 'admin.plans.index', 'label' => 'Planos', 'active' => 'admin.plans*'],
+                                    ['route' => 'admin.categories.index', 'label' => 'Categorias', 'active' => 'admin.categories*'],
+                                    ['route' => 'admin.skills.index', 'label' => 'Habilidades', 'active' => 'admin.skills*'],
+                                    ['route' => 'admin.logs.index', 'label' => 'Auditoria', 'active' => 'admin.logs*'],
+                                ];
+                            @endphp
+                            @foreach ($adminLinks as $link)
+                                <a href="{{ route($link['route']) }}"
+                                   class="whitespace-nowrap px-3 py-1.5 rounded-lg font-medium transition {{ request()->routeIs($link['active']) ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-white hover:text-blue-700' }}">
+                                    {{ $link['label'] }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            @endif
+        @endauth
     </nav>
 
     <!-- Flash Messages -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         @if (session('success'))
-            <div class="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="mt-4 bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <i data-lucide="check-circle" class="w-5 h-5"></i>
                 <p>{{ session('success') }}</p>
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="mt-4 bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                <p>{{ session('error') }}</p>
+            </div>
+        @endif
+
+        @if (session('info'))
+            <div class="mt-4 bg-blue-50 border border-blue-200 text-blue-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <i data-lucide="info" class="w-5 h-5"></i>
+                <p>{{ session('info') }}</p>
+            </div>
+        @endif
+
         @if ($errors->any())
-            <div class="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div class="mt-4 bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
                 <i data-lucide="alert-circle" class="w-5 h-5"></i>
                 <ul class="list-disc list-inside mt-1">
                     @foreach ($errors->all() as $error)
@@ -107,28 +191,24 @@
                 </ul>
             </div>
         @endif
-
-        @foreach (session('errors', []) as $error)
-            <div class="bg-red-50 border border-red-200 text-red-800 px-6 py-4 rounded-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                <i data-lucide="alert-circle" class="w-5 h-5"></i>
-                <p>{{ $error }}</p>
-            </div>
-        @endforeach
     </div>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
         {{ $slot }}
     </main>
 
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-auto py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center text-gray-500 text-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row gap-3 justify-between items-center text-gray-500 text-sm">
             <p>&copy; {{ now()->year }} FreelaJob. Todos os direitos reservados.</p>
-            <div class="flex gap-6">
-                <a href="#" class="hover:text-gray-900">Termos de Uso</a>
-                <a href="#" class="hover:text-gray-900">Privacidade</a>
-                <a href="#" class="hover:text-gray-900">Suporte</a>
+            <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                <a href="{{ route('pages.terms') }}" class="hover:text-gray-900">Termos de Uso</a>
+                <a href="{{ route('pages.privacy') }}" class="hover:text-gray-900">Privacidade</a>
+                <a href="{{ route('pages.support') }}" class="hover:text-gray-900">Suporte</a>
+                <a href="{{ route('freelancers.index') }}" class="hover:text-gray-900">Freelancers</a>
+                <a href="{{ route('ranking.index') }}" class="hover:text-gray-900">Ranking</a>
+                <a href="{{ route('projects.index') }}" class="hover:text-gray-900">Projetos</a>
             </div>
         </div>
     </footer>

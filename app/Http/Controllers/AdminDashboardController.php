@@ -72,7 +72,7 @@ class AdminDashboardController extends Controller
             'totalUsers', 'newUsers', 'activeUsers', 'clientUsers', 'freelancerUsers',
             'totalProjects', 'activeProjects', 'completedProjects', 'disputeProjects',
             'totalGMV', 'platformRevenue', 'escrowBalance', 'avgTicket',
-            'monthlyGMV', 'monthlyRevenue', 'newUsersByMonth',
+            'monthlyGMV', 'monthlyRevenue', 'newUsersByMonth', 'months',
             'projectsByCategory', 'paymentsByMethod', 'projectsByStatus',
             'conversionFunnel', 'proposalsHeatmap', 'alerts', 'period'
         ));
@@ -213,17 +213,21 @@ class AdminDashboardController extends Controller
      */
     protected function getMonths(string $period): array
     {
-        $now = now();
-        switch ($period) {
-            case '6m':
-                return $now->subMonths(5)->monthsUntil($now, 'Y-m');
-            case '3m':
-                return $now->subMonths(2)->monthsUntil($now, 'Y-m');
-            case '1m':
-                return [$now->format('Y-m')];
-            default:
-                return $now->subMonths(11)->monthsUntil($now, 'Y-m');
+        $count = match ($period) {
+            '6m' => 6,
+            '3m' => 3,
+            '1m' => 1,
+            default => 12,
+        };
+
+        $start = now()->startOfMonth()->subMonths($count - 1);
+
+        $months = [];
+        for ($i = 0; $i < $count; $i++) {
+            $months[] = $start->copy()->addMonths($i)->format('Y-m');
         }
+
+        return $months;
     }
 
     /**
