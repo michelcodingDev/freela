@@ -98,13 +98,34 @@ class WithdrawalController extends Controller
     }
 
     /**
-     * Admin lista saques.
+     * Admin lista saques (filtro por status e busca).
      */
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $withdrawals = Withdrawal::with('freelancer')->orderByDesc('created_at')->paginate(20);
+        $query = Withdrawal::with('freelancer')->orderByDesc('created_at');
 
-        return view('admin.withdrawals.index', compact('withdrawals'));
+        $summary = [
+            'pending_count' => (clone $query)->whereIn('status', ['solicitado', 'processando'])->count(),
+            'pending_amount' => (float) (clone $query)->whereIn('status', ['solicitado', 'processando'])->sum('net_amount'),
+            'paid_amount' => (float) (clone $query)->where('status', 'pago')->sum('net_amount'),
+        ];
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhereHas('freelancer', fn ($u) => $u->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))
+                    ->orWhere('pix_key', 'like', '%'.$search.'%');
+            });
+        }
+
+        $withdrawals = $query->paginate(20)->withQueryString();
+
+        return view('admin.withdrawals.index', compact('withdrawals', 'summary'));
     }
 
     /**
@@ -147,6 +168,14 @@ class WithdrawalController extends Controller
         }
 
         $withdrawal->update(['status' => 'cancelado']);
+
+        $this->notifications->notify(
+            $withdrawal->freelancer,
+            'saque_cancelado',
+            'Saque cancelado',
+            'Seu saque de R$ '.number_format((float) $withdrawal->net_amount, 2, ',', '.').' foi cancelado pela moderação. O valor voltou para seu saldo.',
+            []
+        );
 
         return back()->with('success', 'Saque cancelado.');
     }
