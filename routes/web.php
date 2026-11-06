@@ -119,6 +119,8 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::post('/projetos/{project}/propostas', [ProposalController::class, 'store'])->name('proposals.store');
     Route::post('/projetos/{project}/propostas/{proposal}/aceitar', [ProposalController::class, 'accept'])->name('proposals.accept');
     Route::post('/projetos/{project}/propostas/{proposal}/rejeitar', [ProposalController::class, 'reject'])->name('proposals.reject');
+    Route::get('/minhas-propostas', [ProposalController::class, 'mine'])->name('proposals.mine');
+    Route::post('/propostas/{proposal}/retirar', [ProposalController::class, 'withdraw'])->name('proposals.withdraw');
 
     // Pagamentos
     Route::get('/pagamentos/processar/{project}', [PaymentController::class, 'process'])->name('payments.process');

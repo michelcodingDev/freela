@@ -52,6 +52,7 @@
                                     @if ($proposal->status === 'pendente') bg-amber-100 text-amber-700
                                     @elseif ($proposal->status === 'aceita') bg-green-100 text-green-700
                                     @elseif ($proposal->status === 'rejeitada') bg-red-100 text-red-700
+                                    @elseif ($proposal->status === 'retirada') bg-gray-100 text-gray-600
                                     @endif">
                                     @if ($proposal->status === 'pendente')
                                         <i data-lucide="clock" class="w-3 h-3"></i>
@@ -59,6 +60,9 @@
                                     @elseif ($proposal->status === 'aceita')
                                         <i data-lucide="check-circle" class="w-3 h-3"></i>
                                         Aceita
+                                    @elseif ($proposal->status === 'retirada')
+                                        <i data-lucide="undo-2" class="w-3 h-3"></i>
+                                        Retirada
                                     @else
                                         <i data-lucide="x-circle" class="w-3 h-3"></i>
                                         Rejeitada

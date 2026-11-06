@@ -96,6 +96,11 @@
                                 <a href="{{ route('wallet.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                     <i data-lucide="wallet" class="w-4 h-4"></i> Carteira e extrato
                                 </a>
+                                @if (auth()->user()->isFreelancer())
+                                    <a href="{{ route('proposals.mine') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        <i data-lucide="file-text" class="w-4 h-4"></i> Minhas propostas
+                                    </a>
+                                @endif
                                 <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                     <i data-lucide="user" class="w-4 h-4"></i> Meu perfil
                                 </a>

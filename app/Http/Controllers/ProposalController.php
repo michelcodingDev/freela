@@ -28,7 +28,7 @@ class ProposalController extends Controller
         }
 
         // Verificar se já enviou proposta para este projeto
-        if ($project->proposals()->where('freelancer_id', auth()->id())->exists()) {
+        if ($project->proposals()->where('freelancer_id', auth()->id())->whereIn('status', ['pendente', 'aceita'])->exists()) {
             return redirect()->route('projects.show', $project)
                 ->with('info', 'Você já enviou uma proposta para este projeto.');
         }
@@ -49,7 +49,7 @@ class ProposalController extends Controller
             abort(403, 'Apenas freelancers podem enviar propostas.');
         }
 
-        if ($project->proposals()->where('freelancer_id', auth()->id())->exists()) {
+        if ($project->proposals()->where('freelancer_id', auth()->id())->whereIn('status', ['pendente', 'aceita'])->exists()) {
             return redirect()->route('projects.show', $project)
                 ->with('info', 'Você já enviou uma proposta para este projeto.');
         }
@@ -124,6 +124,14 @@ class ProposalController extends Controller
             abort(404, 'Proposta não encontrada.');
         }
 
+        if ($project->status !== 'aguardando_propostas') {
+            return back()->with('error', 'Este projeto não está mais recebendo propostas.');
+        }
+
+        if ($proposal->status !== 'pendente') {
+            return back()->with('error', 'Esta proposta não pode mais ser aceita.');
+        }
+
         // Rejeitar outras propostas pendentes
         $project->proposals()->where('status', 'pendente')
             ->where('id', '!=', $proposal->id)
@@ -162,9 +170,70 @@ class ProposalController extends Controller
             abort(404, 'Proposta não encontrada.');
         }
 
+        if ($proposal->status !== 'pendente') {
+            return back()->with('error', 'Apenas propostas pendentes podem ser rejeitadas.');
+        }
+
         $proposal->update(['status' => 'rejeitada']);
 
+        $this->notifications->notify(
+            $proposal->freelancer,
+            'proposta_rejeitada',
+            'Proposta não selecionada',
+            "Sua proposta no projeto \"{$project->title}\" não foi selecionada.",
+            ['project_id' => $project->id]
+        );
+
         return back()->with('success', 'Proposta rejeitada.');
+    }
+
+    /**
+     * Lista as propostas enviadas pelo freelancer autenticado.
+     */
+    public function mine()
+    {
+        if (! auth()->user()->isFreelancer()) {
+            abort(403, 'Apenas freelancers possuem propostas enviadas.');
+        }
+
+        $proposals = Proposal::where('freelancer_id', auth()->id())
+            ->with(['project.category'])
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return view('proposals.mine', compact('proposals'));
+    }
+
+    /**
+     * Freelancer retira uma proposta ainda pendente.
+     */
+    public function withdraw(Proposal $proposal)
+    {
+        if ($proposal->freelancer_id !== auth()->id()) {
+            abort(403, 'Você não pode retirar esta proposta.');
+        }
+
+        if ($proposal->status !== 'pendente') {
+            return back()->with('error', 'Apenas propostas pendentes podem ser retiradas.');
+        }
+
+        $project = $proposal->project;
+
+        if ($project->status !== 'aguardando_propostas') {
+            return back()->with('error', 'O projeto não está mais recebendo propostas.');
+        }
+
+        $proposal->update(['status' => 'retirada']);
+
+        $this->notifications->notify(
+            $project->client,
+            'proposta_retirada',
+            'Proposta retirada',
+            "{$proposal->freelancer->name} retirou a proposta do projeto \"{$project->title}\".",
+            ['project_id' => $project->id]
+        );
+
+        return back()->with('success', 'Proposta retirada.');
     }
 
     private function proposalLimitFor(User $user): int
