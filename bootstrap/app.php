@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ApiTokenMiddleware;
 use App\Http\Middleware\AuditLoggerMiddleware;
 use App\Http\Middleware\CheckUserStatus;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'status' => CheckUserStatus::class,
             'audit.logger' => AuditLoggerMiddleware::class,
+            'api.token' => ApiTokenMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
