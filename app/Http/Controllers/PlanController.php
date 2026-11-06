@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PlanRequest;
 use App\Models\Plan;
 use App\Models\PlanFeature;
 use Illuminate\Http\Request;
@@ -91,6 +92,8 @@ class PlanController extends Controller
     {
         Gate::authorize('gerenciar planos');
 
+        $plan->load('features');
+
         return view('admin.plans.edit', compact('plan'));
     }
 
@@ -117,6 +120,19 @@ class PlanController extends Controller
             'is_active' => $validated['is_active'] ?? true,
             'sort_order' => $validated['sort_order'] ?? 0,
         ]);
+
+        // Sincroniza funcionalidades: recria a partir do formulário.
+        $plan->features()->delete();
+        if (isset($validated['features'])) {
+            foreach ($validated['features'] as $feature) {
+                PlanFeature::create([
+                    'plan_id' => $plan->id,
+                    'name' => $feature['name'],
+                    'description' => $feature['description'],
+                    'is_included' => $feature['is_included'] ?? true,
+                ]);
+            }
+        }
 
         return redirect()->route('admin.plans.index')
             ->with('success', 'Plano atualizado com sucesso!');
