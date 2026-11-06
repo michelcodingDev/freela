@@ -220,6 +220,19 @@
                 </ul>
             </div>
         @endif
+        @auth
+            @if (! auth()->user()->hasVerifiedEmail())
+                <div class="mt-4 bg-amber-50 border border-amber-200 text-amber-800 px-6 py-4 rounded-lg flex flex-col sm:flex-row sm:items-center gap-3">
+                    <i data-lucide="mail-warning" class="w-5 h-5 shrink-0"></i>
+                    <p class="text-sm">
+                        Confirme seu e-mail para liberar todos os recursos da conta. Você pode continuar usando a plataforma enquanto isso.
+                    </p>
+                    <a href="{{ route('verification.notice') }}" class="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-semibold">
+                        Confirmar agora
+                    </a>
+                </div>
+            @endif
+        @endauth
     </div>
 
     <!-- Conteúdo Principal -->

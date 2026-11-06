@@ -20,6 +20,7 @@ class UserResource extends JsonResource
             'email' => $this->email,
             'type' => $this->type,
             'status' => $this->status,
+            'email_verified' => $this->hasVerifiedEmail(),
             'profile' => $this->whenLoaded('profile'),
         ];
     }

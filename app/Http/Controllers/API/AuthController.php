@@ -49,6 +49,8 @@ class AuthController extends Controller
             'projects_completed' => 0,
         ]);
 
+        $user->sendEmailVerificationNotification();
+
         return response()->json([
             'success' => true,
             'user' => new UserResource($user->load('profile')),

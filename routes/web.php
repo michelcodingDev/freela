@@ -25,6 +25,7 @@ use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\UserPlanSubscriptionController;
+use App\Http\Controllers\VerificationController;
 use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WithdrawalController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +71,13 @@ Route::post('/webhook/pagseguro/{method}', [PaymentController::class, 'webhook']
 // Rotas protegidas (requer autenticação)
 Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+
+    // Verificação de e-mail (não bloqueante: não exige middleware "verified")
+    Route::get('/email/verify', [VerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
+    Route::post('/email/verification-notification', [VerificationController::class, 'resend'])
+        ->middleware('throttle:6,1')->name('verification.send');
 
     // Notificações
     Route::get('/notificacoes', [NotificationController::class, 'index'])->name('notifications.index');

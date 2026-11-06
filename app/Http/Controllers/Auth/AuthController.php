@@ -124,7 +124,7 @@ class AuthController extends Controller
     {
         $data = $request->validated();
 
-        DB::transaction(function () use ($data) {
+        $user = DB::transaction(function () use ($data) {
             $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
@@ -150,12 +150,16 @@ class AuthController extends Controller
                 'total_earned' => 0.00,
                 'projects_completed' => 0,
             ]);
+
+            return $user;
         });
 
-        Auth::login(User::where('email', $data['email'])->first());
+        Auth::login($user);
+
+        $user->sendEmailVerificationNotification();
 
         return redirect()->route('dashboard')
-            ->with('success', 'Cadastro realizado com sucesso! Bem-vindo ao FreelaJob.');
+            ->with('success', 'Cadastro realizado com sucesso! Bem-vindo ao FreelaJob. Enviamos um e-mail de confirmação para você.');
     }
 
     /**
