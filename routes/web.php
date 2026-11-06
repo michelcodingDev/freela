@@ -154,6 +154,8 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     // Portfólio (freelancer)
     Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
     Route::post('/portfolio', [PortfolioController::class, 'store'])->name('portfolio.store');
+    Route::put('/portfolio/{item}', [PortfolioController::class, 'update'])->name('portfolio.update');
+    Route::post('/portfolio/{item}/visibilidade', [PortfolioController::class, 'toggleVisibility'])->name('portfolio.toggle');
     Route::delete('/portfolio/{item}', [PortfolioController::class, 'destroy'])->name('portfolio.destroy');
 
     // Planos (Admin)
