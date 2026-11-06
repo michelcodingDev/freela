@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\PaymentController;
@@ -92,5 +93,14 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     // Admin: Assinaturas
     Route::middleware(['can:gerenciar planos'])->prefix('admin/assinaturas')->name('admin.subscriptions.')->group(function () {
         Route::get('/', [UserPlanSubscriptionController::class, 'adminIndex'])->name('index');
+    });
+
+    // Dashboard Admin (apenas admin)
+    Route::middleware(['can:gerenciar planos'])->prefix('admin')->name('admin.')->group(function () {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/usuarios', [AdminDashboardController::class, 'users'])->name('users');
+        Route::get('/pagamentos', [AdminDashboardController::class, 'payments'])->name('payments');
+        Route::get('/projetos', [AdminDashboardController::class, 'projects'])->name('projects');
+        Route::get('/disputas', [AdminDashboardController::class, 'disputes'])->name('disputes');
     });
 });
