@@ -15,6 +15,11 @@ class Message extends Model
     /** @use HasFactory<MessageFactory> */
     use HasFactory, SoftDeletes;
 
+    protected $casts = [
+        'is_read' => 'boolean',
+        'read_at' => 'datetime',
+    ];
+
     #[Relates]
     public function project()
     {

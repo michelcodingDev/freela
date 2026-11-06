@@ -19,8 +19,22 @@ class MessageController extends Controller
     {
         $this->authorizeParticipant($project);
 
-        $project->load(['client', 'category', 'acceptedProposal.freelancer']);
-        $messages = $project->messages()->with('user')->orderBy('created_at')->paginate(50);
+        $project->load(['client.profile', 'category', 'acceptedProposal.freelancer.profile']);
+        $other = $this->otherParticipant($project);
+
+        // Mostra as 50 mensagens mais recentes (em ordem cronológica) para não esconder o histórico.
+        $messages = $project->messages()
+            ->with('user.profile')
+            ->orderByDesc('created_at')
+            ->paginate(50);
+        $messages->setCollection(
+            $messages->getCollection()->sortBy('created_at')->values()
+        );
+
+        $unreadCount = $project->messages()
+            ->where('is_read', false)
+            ->where('user_id', '!=', Auth::id())
+            ->count();
 
         // Marcar como lidas as mensagens dos outros
         $project->messages()
@@ -28,7 +42,7 @@ class MessageController extends Controller
             ->where('user_id', '!=', Auth::id())
             ->update(['is_read' => true, 'read_at' => now()]);
 
-        return view('messages.index', compact('project', 'messages'));
+        return view('messages.index', compact('project', 'messages', 'other', 'unreadCount'));
     }
 
     /**

@@ -17,9 +17,22 @@ class MessageController extends Controller
             return response()->json(['success' => false, 'message' => 'Sem acesso'], 403);
         }
 
-        $messages = $project->messages()->with('user')->orderBy('created_at')->paginate(50);
+        $messages = $project->messages()->with('user')->orderByDesc('created_at')->paginate(50);
+        $messages->setCollection(
+            $messages->getCollection()->sortBy('created_at')->values()
+        );
 
-        return response()->json(['success' => true, 'data' => $messages]);
+        $unreadCount = $project->messages()
+            ->where('is_read', false)
+            ->where('user_id', '!=', $request->user()->id)
+            ->count();
+
+        $project->messages()
+            ->where('is_read', false)
+            ->where('user_id', '!=', $request->user()->id)
+            ->update(['is_read' => true, 'read_at' => now()]);
+
+        return response()->json(['success' => true, 'data' => $messages, 'unread_count' => $unreadCount]);
     }
 
     public function store(Request $request, Project $project)
