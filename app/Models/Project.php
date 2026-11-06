@@ -39,6 +39,12 @@ class Project extends Model
     }
 
     #[Relates]
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'project_skill');
+    }
+
+    #[Relates]
     public function payments()
     {
         return $this->hasMany(Payment::class);
