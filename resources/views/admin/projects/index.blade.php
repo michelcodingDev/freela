@@ -79,7 +79,7 @@
                                         @elseif ($project->status === 'aguardando_pagamento') bg-purple-100 text-purple-700
                                         @elseif ($project->status === 'em_andamento') bg-blue-100 text-blue-700
                                         @elseif ($project->status === 'aguardando_liberacao') bg-amber-100 text-amber-700
-                                        @elseif ($project->status === 'concluído') bg-green-100 text-green-700
+                                        @elseif ($project->status === 'concluido') bg-green-100 text-green-700
                                         @elseif ($project->status === 'disputa') bg-red-100 text-red-700
                                         @elseif ($project->status === 'fechado') bg-gray-100 text-gray-600
                                         @elseif ($project->status === 'reprovado') bg-red-100 text-red-700

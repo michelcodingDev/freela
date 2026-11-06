@@ -82,9 +82,11 @@
                     <div class="space-y-3">
                         @if ($isCliente)
                             <a href="{{ route('projects.create') }}" class="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 font-medium border border-blue-100">Publicar Projeto</a>
+                            <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-700 font-medium border border-emerald-100">Carteira e Extrato</a>
                             <a href="{{ route('disputes.index') }}" class="flex items-center gap-3 px-4 py-3 bg-amber-50 hover:bg-amber-100 rounded-xl text-amber-700 font-medium border border-amber-100">Disputas</a>
                         @elseif ($isFreelancer)
                             <a href="{{ route('projects.index') }}" class="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 font-medium border border-blue-100">Buscar Projetos</a>
+                            <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-700 font-medium border border-emerald-100">Carteira e Extrato</a>
                             <a href="{{ route('withdrawals.index') }}" class="flex items-center gap-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-xl text-purple-700 font-medium border border-purple-100">Solicitar Saque</a>
                             <a href="{{ route('portfolio.index') }}" class="flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 rounded-xl text-green-700 font-medium border border-green-100">Portfólio</a>
                         @endif

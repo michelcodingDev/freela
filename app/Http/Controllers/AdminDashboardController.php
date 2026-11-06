@@ -35,7 +35,7 @@ class AdminDashboardController extends Controller
 
         $totalProjects = Project::count();
         $activeProjects = Project::where('status', 'em_andamento')->count();
-        $completedProjects = Project::where('status', 'concluído')->count();
+        $completedProjects = Project::where('status', 'concluido')->count();
         $disputeProjects = Project::where('status', 'disputa')->count();
 
         $totalGMV = Payment::where('status', 'liberado')->sum('amount');
@@ -314,9 +314,9 @@ class AdminDashboardController extends Controller
     {
         $published = Project::count();
         $withProposals = Project::whereHas('proposals')->count();
-        $hired = Project::whereIn('status', ['aguardando_pagamento', 'em_andamento', 'aguardando_liberacao', 'concluído'])->count();
+        $hired = Project::whereIn('status', ['aguardando_pagamento', 'em_andamento', 'aguardando_liberacao', 'concluido'])->count();
         $paid = Payment::where('status', 'custodia')->count();
-        $completed = Project::where('status', 'concluído')->count();
+        $completed = Project::where('status', 'concluido')->count();
 
         return [
             ['stage' => 'Publicados', 'value' => $published, 'percentage' => 100],
@@ -382,7 +382,7 @@ class AdminDashboardController extends Controller
                 'icon' => 'clock',
                 'title' => "$oldEscrow pagamento(s) em custódia há mais de 5 dias",
                 'action' => 'Verificar liberações pendentes',
-                'url' => route('admin.payments.index'),
+                'url' => route('admin.payments'),
             ];
         }
 

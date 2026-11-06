@@ -21,6 +21,7 @@ use App\Http\Controllers\RankingController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\UserPlanSubscriptionController;
+use App\Http\Controllers\WalletController;
 use App\Http\Controllers\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
@@ -125,16 +126,14 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::get('/saques', [WithdrawalController::class, 'index'])->name('withdrawals.index');
     Route::post('/saques', [WithdrawalController::class, 'store'])->name('withdrawals.store');
 
+    // Carteira / extrato financeiro
+    Route::get('/carteira', [WalletController::class, 'index'])->name('wallet.index');
+    Route::get('/carteira/exportar', [WalletController::class, 'export'])->name('wallet.export');
+
     // Portfólio (freelancer)
     Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
     Route::post('/portfolio', [PortfolioController::class, 'store'])->name('portfolio.store');
     Route::delete('/portfolio/{item}', [PortfolioController::class, 'destroy'])->name('portfolio.destroy');
-
-    // Admin: Pagamentos
-    Route::middleware(['can:ver todos pagamentos'])->group(function () {
-        Route::get('/admin/pagamentos', [PaymentController::class, 'adminIndex'])->name('admin.payments.index');
-        Route::get('/admin/pagamentos/{payment}', [PaymentController::class, 'adminShow'])->name('admin.payments.show');
-    });
 
     // Planos (Admin)
     Route::middleware(['can:gerenciar planos'])->prefix('admin/planos')->name('admin.plans.')->group(function () {
@@ -182,6 +181,7 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
         Route::get('/usuarios', [AdminDashboardController::class, 'users'])->name('users');
         Route::post('/usuarios/{user}/status', [AdminDashboardController::class, 'updateUserStatus'])->name('users.status');
         Route::get('/pagamentos', [AdminDashboardController::class, 'payments'])->name('payments');
+        Route::get('/pagamentos/{payment}', [PaymentController::class, 'adminShow'])->name('payments.show');
         Route::get('/projetos', [AdminDashboardController::class, 'projects'])->name('projects');
         Route::post('/projetos/{project}/aprovar', [ProjectController::class, 'approve'])->name('projects.approve');
         Route::post('/projetos/{project}/reprovar', [ProjectController::class, 'reject'])->name('projects.reject');
