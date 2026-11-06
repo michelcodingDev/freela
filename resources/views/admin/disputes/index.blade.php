@@ -41,7 +41,7 @@
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-600">{{ $dispute->created_at->format('d/m/Y') }}</td>
                                 <td class="px-6 py-4">
-                                    <a href="#" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                    <a href="{{ route('disputes.show', $dispute) }}" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
                                         Resolver →
                                     </a>
                                 </td>

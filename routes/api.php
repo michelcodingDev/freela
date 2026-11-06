@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ProjectController;
 use App\Http\Controllers\API\ProposalController;
 use App\Http\Controllers\API\RankingController;
 use App\Http\Controllers\API\ReviewController;
+use App\Http\Controllers\API\WalletController;
 use App\Http\Controllers\API\WithdrawalController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,6 +46,13 @@ Route::middleware('api.token')->name('api.')->group(function () {
     // Propostas
     Route::get('/projetos/{project}/propostas', [ProposalController::class, 'index'])->name('proposals.index');
     Route::post('/projetos/{project}/propostas', [ProposalController::class, 'store'])->name('proposals.store');
+    Route::post('/projetos/{project}/propostas/{proposal}/aceitar', [ProposalController::class, 'accept'])->name('proposals.accept');
+    Route::post('/projetos/{project}/propostas/{proposal}/rejeitar', [ProposalController::class, 'reject'])->name('proposals.reject');
+    Route::get('/minhas-propostas', [ProposalController::class, 'mine'])->name('proposals.mine');
+    Route::post('/propostas/{proposal}/retirar', [ProposalController::class, 'withdraw'])->name('proposals.withdraw');
+
+    // Carteira
+    Route::get('/carteira', [WalletController::class, 'index'])->name('wallet.index');
 
     // Pagamentos
     Route::post('/projetos/{project}/pagamentos', [PaymentController::class, 'create'])->name('payments.create');
