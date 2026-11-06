@@ -208,19 +208,40 @@ class AdminDashboardController extends Controller
     }
 
     /**
-     * Lista disputas (admin).
+     * Lista disputas (admin) com filtro por status e busca.
      */
-    public function disputes()
+    public function disputes(Request $request)
     {
         if (! auth()->user()->isAdmin()) {
             abort(403, 'Acesso restrito a administradores.');
         }
 
-        $disputes = Dispute::with(['client', 'freelancer', 'project'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $query = Dispute::with(['client', 'freelancer', 'project'])
+            ->orderBy('created_at', 'desc');
 
-        return view('admin.disputes.index', compact('disputes'));
+        $summary = [
+            'total' => (clone $query)->count(),
+            'open' => (clone $query)->where('status', 'aberta')->count(),
+            'resolved' => (clone $query)->where('status', 'resolvida')->count(),
+        ];
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', $search)
+                    ->orWhereHas('project', fn ($p) => $p->where('title', 'like', '%'.$search.'%'))
+                    ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'))
+                    ->orWhereHas('freelancer', fn ($f) => $f->where('name', 'like', '%'.$search.'%')->orWhere('email', 'like', '%'.$search.'%'));
+            });
+        }
+
+        $disputes = $query->paginate(20)->withQueryString();
+
+        return view('admin.disputes.index', compact('disputes', 'summary'));
     }
 
     /**
