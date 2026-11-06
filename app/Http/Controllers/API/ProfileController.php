@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -22,6 +24,7 @@ class ProfileController extends Controller
                 'email' => $user->email,
                 'type' => $user->type,
                 'status' => $user->status,
+                'email_verified' => $user->hasVerifiedEmail(),
                 'profile' => $user->profile,
             ],
         ]);
@@ -44,26 +47,69 @@ class ProfileController extends Controller
             'pix_key' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $user->update([
+        $emailChanged = mb_strtolower($validated['email']) !== mb_strtolower((string) $user->email);
+
+        $user->forceFill([
             'name' => $validated['name'],
             'email' => $validated['email'],
-        ]);
+            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
+        ])->save();
 
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
-            array_filter([
+            [
                 'phone' => $validated['phone'] ?? null,
                 'city' => $validated['city'] ?? null,
                 'bio' => $validated['bio'] ?? null,
                 'professional_title' => $validated['professional_title'] ?? null,
                 'pix_key' => $validated['pix_key'] ?? null,
-            ])
+            ]
         );
+
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Perfil atualizado com sucesso',
+            'message' => 'Perfil atualizado com sucesso'.($emailChanged ? '. Confirme o novo e-mail.' : ''),
             'user' => $user->load('profile'),
+        ]);
+    }
+
+    /**
+     * Altera a senha do usuário autenticado via API.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => 'Informe sua senha atual.',
+            'password.required' => 'Informe a nova senha.',
+            'password.min' => 'A nova senha deve ter pelo menos 8 caracteres.',
+            'password.confirmed' => 'A confirmação da nova senha não confere.',
+        ]);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A senha atual está incorreta.',
+                'errors' => ['current_password' => ['A senha atual está incorreta.']],
+            ], 422);
+        }
+
+        $user->forceFill([
+            'password' => Hash::make($validated['password']),
+            'remember_token' => Str::random(60),
+        ])->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Senha alterada com sucesso.',
         ]);
     }
 }

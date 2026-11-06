@@ -44,4 +44,19 @@ class WithdrawalController extends Controller
 
         return response()->json(['success' => true, 'data' => $withdrawal], 201);
     }
+
+    public function cancel(Request $request, Withdrawal $withdrawal)
+    {
+        if ($withdrawal->freelancer_id !== $request->user()->id) {
+            return response()->json(['success' => false, 'message' => 'Saque não encontrado.'], 404);
+        }
+
+        if (! in_array($withdrawal->status, ['solicitado', 'processando'], true)) {
+            return response()->json(['success' => false, 'message' => 'Apenas saques pendentes podem ser cancelados.'], 422);
+        }
+
+        $withdrawal->update(['status' => 'cancelado']);
+
+        return response()->json(['success' => true, 'message' => 'Saque cancelado.']);
+    }
 }

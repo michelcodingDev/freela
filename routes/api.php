@@ -36,6 +36,7 @@ Route::middleware(['api.token', 'throttle:api'])->name('api.')->group(function (
     // Perfil
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/senha', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
     // Projetos (rotas literais antes do binding {project})
     Route::get('/projetos', [ProjectController::class, 'index'])->name('projects.index');
@@ -69,6 +70,7 @@ Route::middleware(['api.token', 'throttle:api'])->name('api.')->group(function (
     // Saques
     Route::get('/saques', [WithdrawalController::class, 'index'])->name('withdrawals.index');
     Route::post('/saques', [WithdrawalController::class, 'store'])->name('withdrawals.store');
+    Route::post('/saques/{withdrawal}/cancelar', [WithdrawalController::class, 'cancel'])->name('withdrawals.cancel');
 
     // Disputas
     Route::get('/disputas', [DisputeController::class, 'index'])->name('disputes.index');
