@@ -54,12 +54,34 @@ class ProjectInviteController extends Controller
 
     /**
      * Lista convites recebidos (freelancer).
+     *
+     * Pendentes vêm primeiro; filtro por status (?status=).
      */
-    public function index()
+    public function index(Request $request)
     {
-        $invites = Auth::user()->invitesReceived()->with(['project', 'client'])->orderByDesc('created_at')->paginate(20);
+        $filter = $request->get('status', 'all');
+        if (! in_array($filter, ['all', 'convidado', 'aceito', 'recusado'], true)) {
+            $filter = 'all';
+        }
 
-        return view('invites.index', compact('invites'));
+        $query = Auth::user()->invitesReceived()->with(['project.category', 'client']);
+
+        $summary = [
+            'total' => (clone $query)->count(),
+            'pending' => (clone $query)->where('status', 'convidado')->count(),
+            'accepted' => (clone $query)->where('status', 'aceito')->count(),
+        ];
+
+        if ($filter !== 'all') {
+            $query->where('status', $filter);
+        }
+
+        $invites = $query->orderByRaw("CASE status WHEN 'convidado' THEN 0 WHEN 'aceito' THEN 1 ELSE 2 END")
+            ->orderByDesc('created_at')
+            ->paginate(20)
+            ->withQueryString();
+
+        return view('invites.index', compact('invites', 'summary', 'filter'));
     }
 
     public function accept(ProjectInvite $invite)
