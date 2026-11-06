@@ -8,7 +8,6 @@ use App\Models\Project;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ProjectController extends Controller
@@ -116,8 +115,9 @@ class ProjectController extends Controller
         };
 
         $projects = $query->paginate(12)->withQueryString();
-        $categories = Cache::remember('categories_active', 3600, fn () => Category::active()->orderBy('sort_order')->get());
-        $skills = Cache::remember('skills_all', 3600, fn () => Skill::with('category')->orderBy('name')->get());
+        // Sem cache de collections Eloquent: tabelas pequena e evita serialização frágil no cache (database).
+        $categories = Category::active()->orderBy('sort_order')->get();
+        $skills = Skill::with('category')->orderBy('name')->get();
 
         return view('projects.index', compact('projects', 'categories', 'skills'));
     }

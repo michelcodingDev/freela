@@ -9,11 +9,26 @@ use Illuminate\Support\Str;
 
 class SkillController extends Controller
 {
-    public function adminIndex()
+    public function adminIndex(Request $request)
     {
-        $skills = Skill::with('category')->orderBy('name')->paginate(30);
+        $query = Skill::with('category')->withCount(['projects', 'users']);
 
-        return view('admin.skills.index', compact('skills'));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhereHas('category', fn ($c) => $c->where('name', 'like', '%'.$search.'%'));
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $skills = $query->orderBy('name')->paginate(30)->withQueryString();
+        $categories = Category::orderBy('sort_order')->get();
+
+        return view('admin.skills.index', compact('skills', 'categories'));
     }
 
     public function adminCreate()
@@ -42,8 +57,32 @@ class SkillController extends Controller
 
     public function adminDestroy(Skill $skill)
     {
+        if ($skill->projects()->exists() || $skill->users()->exists()) {
+            return back()->with('error', 'Não é possível excluir uma habilidade em uso por projetos ou freelancers.');
+        }
+
         $skill->delete();
 
         return back()->with('success', 'Habilidade excluída.');
+    }
+
+    public function adminEdit(Skill $skill)
+    {
+        $categories = Category::orderBy('sort_order')->get();
+
+        return view('admin.skills.edit', compact('skill', 'categories'));
+    }
+
+    public function adminUpdate(Request $request, Skill $skill)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:skills,name,'.$skill->id],
+            'category_id' => ['required', 'exists:categories,id'],
+        ]);
+
+        $skill->update($validated);
+
+        return redirect()->route('admin.skills.index')
+            ->with('success', 'Habilidade atualizada.');
     }
 }

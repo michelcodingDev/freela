@@ -187,6 +187,8 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
         Route::get('/', [SkillController::class, 'adminIndex'])->name('index');
         Route::get('/criar', [SkillController::class, 'adminCreate'])->name('create');
         Route::post('/', [SkillController::class, 'adminStore'])->name('store');
+        Route::get('/{skill}/editar', [SkillController::class, 'adminEdit'])->name('edit');
+        Route::put('/{skill}', [SkillController::class, 'adminUpdate'])->name('update');
         Route::delete('/{skill}', [SkillController::class, 'adminDestroy'])->name('destroy');
     });
 

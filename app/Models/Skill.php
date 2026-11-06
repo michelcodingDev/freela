@@ -26,4 +26,10 @@ class Skill extends Model
     {
         return $this->belongsToMany(User::class, 'user_skill')->withTimestamps();
     }
+
+    #[Relates]
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_skill');
+    }
 }
