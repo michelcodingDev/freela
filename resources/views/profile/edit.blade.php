@@ -40,6 +40,7 @@
                                value="{{ old('email', $user->email) }}"
                                required
                                class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-sm">
+                        <p class="text-xs text-gray-400 mt-1">Ao trocar o e-mail, enviamos uma nova confirmação.</p>
                         @error('email')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
@@ -198,6 +199,48 @@
                     </button>
                 </div>
             </form>
+
+            <!-- Segurança: alterar senha -->
+            <div class="border-t border-gray-100 pt-6 mt-8">
+                <h3 class="text-lg font-bold text-gray-900">Segurança</h3>
+                <p class="text-sm text-gray-500 mt-1">Altere sua senha. Outras sessões serão encerradas.</p>
+
+                <form method="POST" action="{{ route('profile.password.update') }}" class="space-y-4 mt-5">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <label for="current_password" class="block text-sm font-medium text-gray-700 mb-1">Senha atual *</label>
+                        <input type="password" name="current_password" id="current_password" required autocomplete="current-password"
+                               class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+                        @error('current_password')
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Nova senha *</label>
+                            <input type="password" name="password" id="password" required minlength="8" autocomplete="new-password"
+                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+                            @error('password')
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div>
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirmar nova senha *</label>
+                            <input type="password" name="password_confirmation" id="password_confirmation" required minlength="8" autocomplete="new-password"
+                                   class="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <button type="submit"
+                            class="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm flex items-center gap-2">
+                        <i data-lucide="key-round" class="w-4 h-4"></i>
+                        Alterar senha
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 

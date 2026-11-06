@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Skill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -32,6 +34,9 @@ class ProfileController extends Controller
 
     /**
      * Atualiza o perfil do usuário.
+     *
+     * Trocar o e-mail invalida a verificação anterior e dispara uma nova
+     * confirmação (não bloqueante). Campos enviados vazios são limpos.
      */
     public function update(Request $request)
     {
@@ -42,7 +47,7 @@ class ProfileController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$user->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'city' => ['nullable', 'string', 'max:100'],
-            'state' => ['nullable', 'string', 'max:100'],
+            'state' => ['nullable', 'string', 'max:2'],
             'zip_code' => ['nullable', 'string', 'max:20'],
             'bio' => ['nullable', 'string', 'max:1000'],
             'professional_title' => ['nullable', 'string', 'max:255'],
@@ -58,14 +63,17 @@ class ProfileController extends Controller
             'skills.*' => ['exists:skills,id'],
         ]);
 
-        // Atualiza usuário
-        $user->update([
+        $emailChanged = mb_strtolower($validated['email']) !== mb_strtolower((string) $user->email);
+
+        // Atualiza usuário (email_verified_at não é fillable: usa forceFill)
+        $user->forceFill([
             'name' => $validated['name'],
             'email' => $validated['email'],
-        ]);
+            'email_verified_at' => $emailChanged ? null : $user->email_verified_at,
+        ])->save();
 
-        // Atualiza ou cria perfil
-        $profileData = array_filter([
+        // Atualiza ou cria perfil (campos vazios limpam o valor)
+        $profileData = [
             'phone' => $validated['phone'] ?? null,
             'city' => $validated['city'] ?? null,
             'state' => $validated['state'] ?? null,
@@ -79,7 +87,7 @@ class ProfileController extends Controller
             'bank_account' => $validated['bank_account'] ?? null,
             'bank_account_digit' => $validated['bank_account_digit'] ?? null,
             'cpf_cnpj' => $validated['cpf_cnpj'] ?? null,
-        ]);
+        ];
 
         // Upload de foto
         if ($request->hasFile('profile_photo')) {
@@ -99,7 +107,42 @@ class ProfileController extends Controller
             $user->skills()->sync($validated['skills'] ?? []);
         }
 
+        if ($emailChanged) {
+            $user->sendEmailVerificationNotification();
+        }
+
         return redirect()->route('profile.show')
-            ->with('success', 'Perfil atualizado com sucesso!');
+            ->with('success', $emailChanged
+                ? 'Perfil atualizado. Enviamos uma nova confirmação de e-mail.'
+                : 'Perfil atualizado com sucesso!');
+    }
+
+    /**
+     * Altera a senha do usuário logado.
+     */
+    public function updatePassword(Request $request)
+    {
+        $user = Auth::user();
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'current_password.required' => 'Informe sua senha atual.',
+            'current_password.current_password' => 'A senha atual está incorreta.',
+            'password.required' => 'Informe a nova senha.',
+            'password.min' => 'A nova senha deve ter pelo menos 8 caracteres.',
+            'password.confirmed' => 'A confirmação da nova senha não confere.',
+        ]);
+
+        $user->forceFill(['password' => Hash::make($validated['password'])]);
+
+        $user->setRememberToken(Str::random(60));
+        $user->save();
+
+        Auth::logoutOtherDevices($validated['password']);
+
+        return redirect()->route('profile.edit')
+            ->with('success', 'Senha alterada com sucesso.');
     }
 }
