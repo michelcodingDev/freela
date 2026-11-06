@@ -140,10 +140,18 @@
                                         <i data-lucide="paperclip" class="w-4 h-4 text-gray-400"></i>
                                         <span class="text-sm text-gray-700">{{ $attachment->original_name }}</span>
                                     </div>
-                                    <a href="{{ route('attachments.download', $attachment) }}" target="_blank"
-                                       class="text-sm text-green-600 hover:text-green-700 font-medium">
-                                        Baixar
-                                    </a>
+                                    <div class="flex gap-2">
+                                        <a href="{{ route('attachments.download', $attachment) }}" target="_blank"
+                                           class="text-sm text-green-600 hover:text-green-700 font-medium">
+                                            Baixar
+                                        </a>
+                                        <form method="POST" action="{{ route('attachments.destroy', $attachment) }}"
+                                              onsubmit="return confirm('Remover este anexo?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="text-sm text-red-600 hover:text-red-700 font-medium">Remover</button>
+                                        </form>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>

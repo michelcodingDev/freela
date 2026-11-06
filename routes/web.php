@@ -104,6 +104,7 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
 
     // Anexos (download seguro)
     Route::get('/anexos/{attachment}', [AttachmentController::class, 'download'])->name('attachments.download');
+    Route::delete('/anexos/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
     // Convites (RF04)
     Route::post('/projetos/{project}/convidar', [ProjectInviteController::class, 'store'])->name('projects.invites.store');
