@@ -46,7 +46,7 @@
 <body class="bg-gray-50 min-h-screen flex flex-col">
 
     <!-- Navbar -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm" x-data="{ mobileOpen: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16 items-center gap-4">
                 <a href="{{ route('home') }}" class="flex items-center gap-3 shrink-0">
@@ -60,10 +60,15 @@
                     <a href="{{ route('home') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Início</a>
                     <a href="{{ route('projects.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Projetos</a>
                     <a href="{{ route('freelancers.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Freelancers</a>
+                    <a href="{{ route('categories.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Categorias</a>
                     <a href="{{ route('ranking.index') }}" class="text-gray-600 hover:text-green-600 font-medium transition">Ranking</a>
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <button type="button" @click="mobileOpen = !mobileOpen" class="md:hidden p-2 text-gray-600 hover:text-green-600 rounded-lg" aria-label="Abrir menu">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+
                     @auth
                         <a href="{{ route('notifications.index') }}" class="relative p-2 text-gray-500 hover:text-green-600 hover:bg-gray-50 rounded-lg transition" title="Notificações">
                             <i data-lucide="bell" class="w-5 h-5"></i>
@@ -130,6 +135,22 @@
                         <a href="{{ route('register') }}" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-medium transition shadow-lg">Cadastrar</a>
                     @endauth
                 </div>
+            </div>
+
+            <!-- Menu mobile -->
+            <div x-show="mobileOpen" x-cloak x-transition class="md:hidden border-t border-gray-100 py-3 space-y-1">
+                <a href="{{ route('home') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Início</a>
+                <a href="{{ route('projects.index') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Projetos</a>
+                <a href="{{ route('freelancers.index') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Freelancers</a>
+                <a href="{{ route('categories.index') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Categorias</a>
+                <a href="{{ route('ranking.index') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Ranking</a>
+                @auth
+                    <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Meu Dashboard</a>
+                    @if (auth()->user()->isCliente() || auth()->user()->isFreelancer())
+                        <a href="{{ route('projects.mine') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Meus Projetos</a>
+                    @endif
+                    <a href="{{ route('wallet.index') }}" class="block px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-50 font-medium">Carteira</a>
+                @endauth
             </div>
         </div>
 

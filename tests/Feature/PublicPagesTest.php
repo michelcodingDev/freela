@@ -32,6 +32,17 @@ class PublicPagesTest extends TestCase
             ->assertSee(route('pages.privacy'), false);
     }
 
+    public function test_guest_layout_exposes_public_navigation_and_mobile_menu(): void
+    {
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee(route('categories.index'), false)
+            ->assertSee(route('projects.index'), false)
+            ->assertSee(route('freelancers.index'), false)
+            ->assertSee(route('ranking.index'), false)
+            ->assertSee('Menu mobile');
+    }
+
     public function test_admin_sees_admin_navigation_in_layout(): void
     {
         $admin = User::factory()->admin()->create();

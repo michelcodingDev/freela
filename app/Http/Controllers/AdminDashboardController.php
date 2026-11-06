@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\Proposal;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AdminDashboardController extends Controller
@@ -231,12 +232,28 @@ class AdminDashboardController extends Controller
     }
 
     /**
+     * Início e fim (inclusive) do intervalo coberto pelos meses informados.
+     *
+     * @param  array<int, string>  $months
+     * @return array{0: Carbon, 1: Carbon}
+     */
+    protected function monthRange(array $months): array
+    {
+        $start = Carbon::createFromFormat('Y-m', $months[0])->startOfMonth();
+        $end = Carbon::createFromFormat('Y-m', end($months))->endOfMonth();
+
+        return [$start, $end];
+    }
+
+    /**
      * Obtém GMV mensal.
      */
     protected function getMonthlyGMV(array $months): array
     {
+        [$start, $end] = $this->monthRange($months);
+
         $data = Payment::where('status', 'liberado')
-            ->whereBetween('released_at', [now()->subMonths(11), now()])
+            ->whereBetween('released_at', [$start, $end])
             ->select(DB::raw('DATE_FORMAT(released_at, "%Y-%m") as month'), DB::raw('SUM(amount) as total'))
             ->groupBy('month')
             ->pluck('total', 'month')
@@ -250,8 +267,10 @@ class AdminDashboardController extends Controller
      */
     protected function getMonthlyRevenue(array $months): array
     {
+        [$start, $end] = $this->monthRange($months);
+
         $data = Payment::where('status', 'liberado')
-            ->whereBetween('released_at', [now()->subMonths(11), now()])
+            ->whereBetween('released_at', [$start, $end])
             ->select(DB::raw('DATE_FORMAT(released_at, "%Y-%m") as month'), DB::raw('SUM(platform_fee) as total'))
             ->groupBy('month')
             ->pluck('total', 'month')
@@ -265,7 +284,9 @@ class AdminDashboardController extends Controller
      */
     protected function getNewUsersByMonth(array $months): array
     {
-        $data = User::whereBetween('created_at', [now()->subMonths(11), now()])
+        [$start, $end] = $this->monthRange($months);
+
+        $data = User::whereBetween('created_at', [$start, $end])
             ->select(DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'), DB::raw('COUNT(*) as total'), 'type')
             ->groupBy('month', 'type')
             ->get()
