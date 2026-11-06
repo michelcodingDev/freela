@@ -14,6 +14,38 @@ use Illuminate\Support\Str;
 class ProjectController extends Controller
 {
     /**
+     * Lista os projetos do usuário (cliente: publicados; freelancer: contratados).
+     */
+    public function mine(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.projects');
+        }
+
+        if (! $user->isCliente() && ! $user->isFreelancer()) {
+            abort(403, 'Projetos indisponíveis para este tipo de conta.');
+        }
+
+        $query = $user->isCliente()
+            ? Project::where('client_id', $user->id)
+            : Project::whereHas('acceptedProposal', fn ($q) => $q->where('freelancer_id', $user->id));
+
+        $query->with(['category', 'client', 'acceptedProposal.freelancer'])
+            ->withCount('proposals')
+            ->orderByDesc('created_at');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $projects = $query->paginate(15)->withQueryString();
+
+        return view('projects.mine', compact('projects'));
+    }
+
+    /**
      * Lista projetos disponíveis para propostas (RF10: palavra, categoria, habilidade, preço, nível).
      */
     public function index(Request $request)

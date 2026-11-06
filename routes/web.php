@@ -82,6 +82,7 @@ Route::middleware(['auth', 'status:ativo'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Projetos
+    Route::get('/meus-projetos', [ProjectController::class, 'mine'])->name('projects.mine');
     Route::get('/projetos/criar', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projetos', [ProjectController::class, 'store'])->name('projects.store');
     Route::get('/projetos/{project}/editar', [ProjectController::class, 'edit'])->name('projects.edit');

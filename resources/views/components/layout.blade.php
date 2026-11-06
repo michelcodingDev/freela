@@ -93,12 +93,20 @@
                                 <a href="{{ route('dashboard') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                     <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Dashboard
                                 </a>
+                                @if (auth()->user()->isCliente() || auth()->user()->isFreelancer())
+                                    <a href="{{ route('projects.mine') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        <i data-lucide="folder-kanban" class="w-4 h-4"></i> Meus projetos
+                                    </a>
+                                @endif
                                 <a href="{{ route('wallet.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                     <i data-lucide="wallet" class="w-4 h-4"></i> Carteira e extrato
                                 </a>
                                 @if (auth()->user()->isFreelancer())
                                     <a href="{{ route('proposals.mine') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                                         <i data-lucide="file-text" class="w-4 h-4"></i> Minhas propostas
+                                    </a>
+                                    <a href="{{ route('invites.index') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                                        <i data-lucide="mail" class="w-4 h-4"></i> Convites recebidos
                                     </a>
                                 @endif
                                 <a href="{{ route('profile.show') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">

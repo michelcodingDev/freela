@@ -82,11 +82,19 @@
                     <div class="space-y-3">
                         @if ($isCliente)
                             <a href="{{ route('projects.create') }}" class="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 font-medium border border-blue-100">Publicar Projeto</a>
+                            <a href="{{ route('projects.mine') }}" class="flex items-center gap-3 px-4 py-3 bg-sky-50 hover:bg-sky-100 rounded-xl text-sky-700 font-medium border border-sky-100">Meus Projetos</a>
                             <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-700 font-medium border border-emerald-100">Carteira e Extrato</a>
                             <a href="{{ route('disputes.index') }}" class="flex items-center gap-3 px-4 py-3 bg-amber-50 hover:bg-amber-100 rounded-xl text-amber-700 font-medium border border-amber-100">Disputas</a>
                         @elseif ($isFreelancer)
                             <a href="{{ route('projects.index') }}" class="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-xl text-blue-700 font-medium border border-blue-100">Buscar Projetos</a>
+                            <a href="{{ route('projects.mine') }}" class="flex items-center gap-3 px-4 py-3 bg-sky-50 hover:bg-sky-100 rounded-xl text-sky-700 font-medium border border-sky-100">Meus Projetos</a>
                             <a href="{{ route('proposals.mine') }}" class="flex items-center gap-3 px-4 py-3 bg-indigo-50 hover:bg-indigo-100 rounded-xl text-indigo-700 font-medium border border-indigo-100">Minhas Propostas</a>
+                            <a href="{{ route('invites.index') }}" class="flex items-center gap-3 px-4 py-3 bg-cyan-50 hover:bg-cyan-100 rounded-xl text-cyan-700 font-medium border border-cyan-100">
+                                Convites Recebidos
+                                @if (($stats['pendingInvites'] ?? 0) > 0)
+                                    <span class="ml-auto bg-cyan-600 text-white text-xs px-2 py-0.5 rounded-full">{{ $stats['pendingInvites'] }}</span>
+                                @endif
+                            </a>
                             <a href="{{ route('wallet.index') }}" class="flex items-center gap-3 px-4 py-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-700 font-medium border border-emerald-100">Carteira e Extrato</a>
                             <a href="{{ route('withdrawals.index') }}" class="flex items-center gap-3 px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-xl text-purple-700 font-medium border border-purple-100">Solicitar Saque</a>
                             <a href="{{ route('portfolio.index') }}" class="flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 rounded-xl text-green-700 font-medium border border-green-100">Portfólio</a>

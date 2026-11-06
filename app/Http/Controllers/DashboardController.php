@@ -60,6 +60,8 @@ class DashboardController extends Controller
                 ->whereHas('acceptedProposal', fn ($q) => $q->where('freelancer_id', $user->id))->count();
             $stats['receivedProposals'] = $user->proposalsAsFreelancer()
                 ->whereIn('status', ['pendente', 'aceita'])->count();
+            $stats['pendingInvites'] = $user->invitesReceived()
+                ->where('status', 'convidado')->count();
             $stats['recentProjects'] = Project::whereIn('status', ['aguardando_pagamento', 'em_andamento', 'aguardando_liberacao'])
                 ->whereHas('acceptedProposal', fn ($q) => $q->where('freelancer_id', $user->id))
                 ->with(['category'])->orderByDesc('created_at')->limit(5)->get();
